@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>FORGE 3.2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" aria-hidden="true" class="defs">
+  <defs>
+    <linearGradient id="forgeSweep" x1="100" y1="18" x2="100" y2="190" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffeeb0"></stop>
+      <stop offset=".45" stop-color="#ffc61a"></stop>
+      <stop offset="1" stop-color="#b05e12"></stop>
+    </linearGradient>
+    <g id="forgeSword">
+      <path fill="url(#forgeSweep)" d="M100 18 116 45 112 119 88 119 84 45Z"></path>
+      <path fill="url(#forgeSweep)" d="M45 116 88 108 94 126 67 137 50 130Z"></path>
+      <path fill="url(#forgeSweep)" d="M155 116 112 108 106 126 133 137 150 130Z"></path>
+      <rect x="93" y="124" width="14" height="42" rx="3" fill="url(#forgeSweep)"></rect>
+      <path fill="url(#forgeSweep)" d="M100 164 114 178 100 190 86 178Z"></path>
+      <path fill="#783c0c" fill-opacity=".55" d="M100 27 104 48 103 112 97 112 96 48Z"></path>
+    </g>
+    <symbol id="icoCross" viewBox="0 0 512.021 512.021">
+      <path fill="currentColor" d="M301.258,256.01L502.645,54.645c12.501-12.501,12.501-32.769,0-45.269c-12.501-12.501-32.769-12.501-45.269,0l0,0L256.01,210.762L54.645,9.376c-12.501-12.501-32.769-12.501-45.269,0s-12.501,32.769,0,45.269L210.762,256.01L9.376,457.376c-12.501,12.501-12.501,32.769,0,45.269s32.769,12.501,45.269,0L256.01,301.258l201.365,201.387c12.501,12.501,32.769,12.501,45.269,0c12.501-12.501,12.501-32.769,0-45.269L301.258,256.01z"></path>
+    </symbol>
+    <symbol id="icoSearch" viewBox="0 0 513.749 513.749">
+      <path fill="currentColor" d="M504.352,459.061l-99.435-99.477c74.402-99.427,54.115-240.344-45.312-314.746S119.261-9.277,44.859,90.15S-9.256,330.494,90.171,404.896c79.868,59.766,189.565,59.766,269.434,0l99.477,99.477c12.501,12.501,32.769,12.501,45.269,0c12.501-12.501,12.501-32.769,0-45.269L504.352,459.061z M225.717,385.696c-88.366,0-160-71.634-160-160s71.634-160,160-160s160,71.634,160,160C385.623,314.022,314.044,385.602,225.717,385.696z"></path>
+    </symbol>
+    <symbol id="icoFolder" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M19.949,5.536,16.465,2.05A6.958,6.958,0,0,0,11.515,0H7A5.006,5.006,0,0,0,2,5V19a5.006,5.006,0,0,0,5,5H17a5.006,5.006,0,0,0,5-5V10.485A6.951,6.951,0,0,0,19.949,5.536ZM18.535,6.95A4.983,4.983,0,0,1,19.316,8H15a1,1,0,0,1-1-1V2.684a5.01,5.01,0,0,1,1.051.78ZM20,19a3,3,0,0,1-3,3H7a3,3,0,0,1-3-3V5A3,3,0,0,1,7,2h4.515c.164,0,.323.032.485.047V7a3,3,0,0,0,3,3h4.953c.015.162.047.32.047.485Z"></path>
+    </symbol>
+    <symbol id="icoGear" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M22.994,11.954c.006-1.206-.452-2.662-2.571-3.05-.11-.21-.231-.421-.364-.633,1.068-1.479,.986-2.851-.248-4.085-1.235-1.236-2.607-1.317-4.087-.245-.209-.132-.418-.252-.627-.36-.382-2.112-1.824-2.58-3.027-2.58-1.687,0-2.771,.891-3.086,2.624-.208,.109-.418,.23-.629,.362-1.473-1.064-2.846-.973-4.093,.272-1.243,1.244-1.333,2.618-.272,4.091-.133,.212-.255,.423-.366,.633-1.729,.316-2.609,1.345-2.618,3.063-.006,1.206,.452,2.662,2.571,3.05,.11,.21,.231,.421,.365,.633-1.069,1.479-.987,2.851,.247,4.085,1.235,1.236,2.608,1.317,4.087,.245,.209,.132,.418,.252,.627,.36,.382,2.112,1.824,2.58,3.027,2.58,1.785,0,2.771-.891,3.086-2.624,.208-.109,.418-.23,.629-.362,2.351,1.769,4.092-.272,4.093-.272,1.214-1.149,1.334-2.618,.272-4.092,.133-.212,.255-.423,.366-.632,1.729-.316,2.609-1.345,2.618-3.063Zm-8.532,2.508c-.817,.818-1.593,1.274-2.67,1.21-1.016-.061-1.773-.728-2.254-1.21-1.634-1.633-1.634-3.291,0-4.925,.882-.884,1.754-1.286,2.67-1.209,1.015,.078,1.773,.728,2.254,1.21,1.633,1.633,1.634,3.291,0,4.925Z"></path>
+    </symbol>
+    <symbol id="icoCode" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M19,1H5C2.243,1,0,3.243,0,6V14c0,2.757,2.243,5,5,5h6v2H7c-.552,0-1,.447-1,1s.448,1,1,1h10c.552,0,1-.447,1-1s-.448-1-1-1h-4v-2h6c2.757,0,5-2.243,5-5V6c0-2.757-2.243-5-5-5ZM7.293,10.707l2.583,2.584c.391,.391,.391,1.023,0,1.414-.195,.195-.451,.293-.707,.293s-.512-.098-.707-.293l-2.583-2.584c-1.17-1.17-1.17-3.072,0-4.242l2.583-2.584c.391-.391,1.023-.391,1.414,0s.391,1.023,0,1.414l-2.583,2.584c-.39,.39-.39,1.024,0,1.414Zm10.828,1.414l-2.583,2.584c-.195,.195-.451,.293-.707,.293s-.512-.098-.707-.293c-.391-.391-.391-1.023,0-1.414l2.583-2.584c.39-.39,.39-1.024,0-1.414l-2.583-2.584c-.391-.391-.391-1.023,0-1.414s1.023-.391,1.414,0l2.583,2.584c1.17,1.17,1.17,3.072,0,4.242Z"></path>
+    </symbol>
+    <symbol id="icoGlobe" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12,0A12,12,0,1,0,24,12,12.013,12.013,0,0,0,12,0Zm8.647,7H17.426a19.676,19.676,0,0,0-2.821-4.644A10.031,10.031,0,0,1,20.647,7ZM16.5,12a10.211,10.211,0,0,1-.476,3H7.976A10.211,10.211,0,0,1,7.5,12a10.211,10.211,0,0,1,.476-3h8.048A10.211,10.211,0,0,1,16.5,12ZM8.778,17h6.444A19.614,19.614,0,0,1,12,21.588,19.57,19.57,0,0,1,8.778,17Zm0-10A19.614,19.614,0,0,1,12,2.412,19.57,19.57,0,0,1,15.222,7ZM9.4,2.356A19.676,19.676,0,0,0,6.574,7H3.353A10.031,10.031,0,0,1,9.4,2.356ZM2.461,9H5.9a12.016,12.016,0,0,0-.4,3,12.016,12.016,0,0,0,.4,3H2.461a9.992,9.992,0,0,1,0-6Zm.892,8H6.574A19.676,19.676,0,0,0,9.4,21.644,10.031,10.031,0,0,1,3.353,17Zm11.252,4.644A19.676,19.676,0,0,0,17.426,17h3.221A10.031,10.031,0,0,1,14.605,21.644ZM21.539,15H18.1a12.016,12.016,0,0,0,.4-3,12.016,12.016,0,0,0-.4-3h3.437a9.992,9.992,0,0,1,0,6Z"></path>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+
+  <aside class="rail" id="rail">
+    <div class="railhead">
+      <div class="brand">
+        <svg class="glyph" viewBox="0 0 200 200" aria-hidden="true"><use href="#forgeSword"></use></svg>
+        <span class="marks"><b>FORGE</b><span>3.2</span></span>
+      </div>
+
+      <button class="newchat" id="newChat" type="button">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 2.5v9M2.5 7h9"></path></svg>
+        <span>New chat</span>
+        <kbd>Ctrl N</kbd>
+      </button>
+
+      <button class="newchat ghost" id="newProject" type="button" title="Start a project around a folder on this PC">
+        <svg width="13" height="13" aria-hidden="true"><use href="#icoFolder"></use></svg>
+        <span>New project</span>
+      </button>
+
+      <div class="searchwrap">
+        <svg width="13" height="13" aria-hidden="true"><use href="#icoSearch"></use></svg>
+        <input class="search" id="chatSearch" type="search" placeholder="Search saved chats" autocomplete="off" aria-label="Search saved chats">
+      </div>
+    </div>
+
+    <div class="chats" id="chats" aria-label="Saved chats"></div>
+
+    <div class="railfoot">
+      <span class="lock" id="lockChip">
+        <svg width="9" height="11" viewBox="0 0 10 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="5" width="8" height="6" rx="1.4"></rect><path d="M3 5V3.4A2 2 0 0 1 7 3.4V5" id="lockShackle"></path></svg>
+        <span id="lockText">vault</span>
+      </span>
+      <span class="drawer" id="drawerPath" title="Forge 3.2 keeps its own chat drawer">Forge-3.2</span>
+    </div>
+  </aside>
+
+  <main class="stage" id="stage">
+
+    <header class="top" id="topbar">
+      <button class="icobtn" id="railBtn" type="button" aria-label="Toggle sidebar" title="Toggle sidebar">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.6" y="2.6" width="12.8" height="10.8" rx="2"></rect><path d="M6.2 2.6v10.8"></path></svg>
+      </button>
+
+      <button class="modelchip" id="modelChip" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="provider" id="modelProvider">backend</span>
+        <span class="name" id="modelName">model</span>
+        <span class="caret" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 5.2 7 8.8l3.6-3.6"></path></svg></span>
+      </button>
+
+      <span class="titlebar" id="titleBar"></span>
+
+      <span class="wschip" id="wsChip" hidden title="">
+        <svg width="11" height="11" aria-hidden="true"><use href="#icoFolder"></use></svg>
+        <span id="wsChipText"></span>
+        <span class="wstools" id="wsTools" aria-hidden="true"></span>
+      </span>
+
+      <span class="alert" id="alertChip" hidden>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 3v3.4M6 8.6v.1"></path><circle cx="6" cy="6" r="4.6"></circle></svg>
+        <span id="alertText"></span>
+      </span>
+
+      <button class="icobtn" id="settingsBtn" type="button" aria-label="Settings" title="Settings (Ctrl ,)">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icoGear"></use></svg>
+      </button>
+
+      <span class="wingroup">
+        <button class="win" id="winMin" type="button" aria-label="Minimize" title="Minimize">
+          <svg width="11" height="11" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.3"><path d="M2.5 6h7"></path></svg>
+        </button>
+        <button class="win" id="winMax" type="button" aria-label="Maximize" title="Maximize">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.6" y="2.6" width="6.8" height="6.8" rx="1.2"></rect></svg>
+        </button>
+        <button class="win close" id="winClose" type="button" aria-label="Close" title="Close">
+          <svg width="10" height="10" aria-hidden="true"><use href="#icoCross"></use></svg>
+        </button>
+      </span>
+    </header>
+
+    <div class="thread" id="thread" aria-live="polite" aria-label="Conversation">
+      <div class="turns" id="turns"></div>
+      <div class="empty" id="empty" hidden>
+        <svg class="glyph" viewBox="0 0 200 200" aria-hidden="true"><use href="#forgeSword"></use></svg>
+        <h1>What should Forge draft?</h1>
+        <p>Chat to compile, review, or revise a prompt. Forge will not leave that job.</p>
+      </div>
+    </div>
+
+    <button class="jump" id="jumpBtn" type="button" hidden>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v8M2.8 6.8 6 10l3.2-3.2"></path></svg>
+      Jump to latest
+    </button>
+
+    <div class="composerwrap">
+      <form class="composer" id="composer">
+        <textarea id="input" rows="1" placeholder="Compile, review, or revise a prompt" autocomplete="off" aria-label="Compile, review, or revise a prompt"></textarea>
+        <div class="comfoot">
+          <span class="hints">
+            <span><kbd>Enter</kbd> send</span>
+            <span><kbd>Shift Enter</kbd> newline</span>
+            <span><kbd>&#8593;</kbd> reuse last</span>
+          </span>
+          <button class="thinkbtn" id="thinkBtn" type="button" title="Reasoning effort — each model family maps it to its own control">Think · Medium</button>
+          <button class="send" id="sendBtn" type="submit">
+            <span id="sendLabel">Send</span>
+            <svg id="sendIcon" width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 10.5v-8M3 6l3.5-3.5L10 6"></path></svg>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </main>
+</div>
+
+
+<div class="modal sheetwrap" id="settings" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+
+    <header class="sheethead">
+      <h2 id="setTitle">Settings</h2>
+      <span class="sheetsub" id="setSub">prompt workshop &middot; chat body, prompt mouth</span>
+      <button class="icobtn" id="setClose" type="button" aria-label="Close settings" title="Close">
+        <svg width="13" height="13" aria-hidden="true"><use href="#icoCross"></use></svg>
+      </button>
+    </header>
+
+    <div class="sheetmain">
+      <nav class="tabs" role="tablist" aria-label="Settings sections">
+        <button class="tab on" id="tabModels" type="button" role="tab" data-pane="paneModels" aria-selected="true" aria-controls="paneModels">Models</button>
+        <button class="tab" id="tabKeys" type="button" role="tab" data-pane="paneKeys" aria-selected="false" aria-controls="paneKeys">API keys</button>
+        <button class="tab" id="tabParams" type="button" role="tab" data-pane="paneParams" aria-selected="false" aria-controls="paneParams">Parameters</button>
+        <button class="tab" id="tabLook" type="button" role="tab" data-pane="paneLook" aria-selected="false" aria-controls="paneLook">Appearance</button>
+        <button class="tab" id="tabPrompts" type="button" role="tab" data-pane="panePrompts" aria-selected="false" aria-controls="panePrompts">Prompts</button>
+        <button class="tab" id="tabCredits" type="button" role="tab" data-pane="paneCredits" aria-selected="false" aria-controls="paneCredits">Credits</button>
+      </nav>
+
+      <div class="sheetbody" id="sheetbody">
+
+        <section class="pane" id="paneModels" role="tabpanel" aria-labelledby="tabModels">
+          <div class="panehead">
+            <div>
+              <h3>Pinned model</h3>
+              <p class="note">The model pin is stored only in FORGE 3.2.</p>
+            </div>
+            <span class="pinned" id="setPinned">&mdash;</span>
+          </div>
+          <div class="searchwrap wide">
+            <svg width="13" height="13" aria-hidden="true"><use href="#icoSearch"></use></svg>
+            <input class="search" id="setModelSearch" type="search" placeholder="Search cheap models" autocomplete="off" aria-label="Search cheap models">
+          </div>
+          <label class="onlykeyed"><input type="checkbox" id="setOnlyKeyed"><span>Only providers with a key</span></label>
+          <div class="modellist tall" id="setModelList"></div>
+          <p class="note foot">Cheap floor, Kimi mid-tier including K3, and Grok 4.5 / 4.6 / 4.7.</p>
+        </section>
+
+        <section class="pane" id="paneKeys" role="tabpanel" aria-labelledby="tabKeys" hidden>
+          <div class="panehead">
+            <div>
+              <h3>Provider keys</h3>
+              <p class="note" id="keysNote">Keys are stored only for FORGE 3.2.</p>
+            </div>
+          </div>
+          <div class="keylist" id="setKeyList"></div>
+          <div class="panehead customhead">
+            <div>
+              <h3>Your own providers</h3>
+              <p class="note">Point Forge at a gateway you run or pay for: a self-hosted
+              llama.cpp or vLLM box, an internal proxy, a colleague's endpoint. Anything
+              that speaks the OpenAI or Anthropic chat API works. The key goes to the same
+              locked keys folder as the others and never leaves this machine.</p>
+            </div>
+          </div>
+          <div class="customlist" id="setCustomList"></div>
+          <button class="pbtn" id="setCustomAdd" type="button">Add a provider</button>
+          <form class="customform" id="setCustomForm" hidden>
+            <div class="customrow">
+              <label>Name<input type="text" id="customLabel" placeholder="my gateway" maxlength="40" autocomplete="off"></label>
+              <label>Short id<input type="text" id="customId" placeholder="my-gateway" maxlength="40" autocomplete="off"></label>
+            </div>
+            <label>Base URL<input type="text" id="customUrl" placeholder="https://api.example.com/v1" maxlength="300" autocomplete="off"></label>
+            <label>Models, comma separated<input type="text" id="customModels" placeholder="my-model, my-model-mini" maxlength="2000" autocomplete="off"></label>
+            <div class="customrow">
+              <label>API shape
+                <select id="customDialect">
+                  <option value="openai">OpenAI compatible</option>
+                  <option value="anthropic">Anthropic</option>
+                </select>
+              </label>
+              <label>API key<input type="password" id="customKey" placeholder="optional if the server needs none" autocomplete="off"></label>
+            </div>
+            <label class="checkrow"><input type="checkbox" id="customFree"><span>It is free to use</span></label>
+            <p class="note" id="customErr"></p>
+            <div class="customacts">
+              <button class="pbtn ghost" id="customCancel" type="button">Cancel</button>
+              <button class="pbtn" id="customSave" type="submit">Save provider</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="pane" id="paneParams" role="tabpanel" aria-labelledby="tabParams" hidden>
+          <div class="panehead">
+            <div>
+              <h3>Parameters</h3>
+              <p class="note">Generation, drafting, judging, network, and security. Every field writes straight into the FORGE 3.2 config.</p>
+            </div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Generation</h4>
+            <p class="note">Sampling for every model call, pinned provider or not.</p>
+            <div class="prow">
+              <label for="setTemp">Temperature</label>
+              <input type="range" id="setTemp" min="0" max="2" step="0.05" value="0.9">
+              <output id="setTempVal">0.90</output>
+            </div>
+            <div class="prow">
+              <label for="setTopP">Top-p</label>
+              <input type="range" id="setTopP" min="0" max="1" step="0.05" value="1">
+              <output id="setTopPVal">1.00</output>
+            </div>
+            <label class="pcheck"><input type="checkbox" id="setHold"><span>Auto-continue long replies</span></label>
+            <label class="pcheck"><input type="checkbox" id="setHoldPrefill"><span>Prefill the held text</span></label>
+            <div class="prow">
+              <label for="setHoldMax">Continuations</label>
+              <input type="number" id="setHoldMax" min="1" max="4" step="1" value="4">
+            </div>
+            <div class="prow">
+              <label for="setFallback">Fallback model</label>
+              <input type="text" id="setFallback" class="wide" placeholder="model id" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Drafting</h4>
+            <div class="prow">
+              <label for="setStyle">Style</label>
+              <select id="setStyle" class="ctl"></select>
+            </div>
+            <div class="prow">
+              <label for="setTarget">Target</label>
+              <input type="text" id="setTarget" class="wide" placeholder="general" autocomplete="off">
+            </div>
+            <label class="pcheck"><input type="checkbox" id="setRecordTests"><span>Record test turns</span></label>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Anvil judge</h4>
+            <div class="prow">
+              <label for="setJudgeBackend">Judge provider</label>
+              <select id="setJudgeBackend" class="ctl"></select>
+            </div>
+            <div class="prow">
+              <label for="setJudgeModel">Judge model</label>
+              <input type="text" id="setJudgeModel" class="wide" autocomplete="off">
+            </div>
+            <label class="pcheck"><input type="checkbox" id="setAnvilAuto"><span>Auto-improve drafts</span></label>
+            <div class="prow">
+              <label for="setProbes">Probes per cycle</label>
+              <input type="number" id="setProbes" min="2" max="6" step="1" value="4">
+            </div>
+            <div class="prow">
+              <label for="setVersions">Max versions</label>
+              <input type="number" id="setVersions" min="1" max="3" step="1" value="3">
+            </div>
+            <div class="prow">
+              <label for="setThreshold">Star threshold</label>
+              <input type="number" id="setThreshold" min="1" max="6" step="1" value="6">
+            </div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Network</h4>
+            <div class="prow">
+              <label for="setReqTimeout">Request timeout (s)</label>
+              <input type="number" id="setReqTimeout" min="10" max="600" step="1" value="180">
+            </div>
+            <div class="prow">
+              <label for="setRetries">Connect retries</label>
+              <input type="number" id="setRetries" min="1" max="8" step="1" value="4">
+            </div>
+            <p class="note">Provider traffic is HTTPS only; plain HTTP is refused, even for the loopback bridge.</p>
+          </div>
+
+          <div class="paramgroup" id="securityGroup">
+            <h4 class="paramtitle">Security</h4>
+            <label class="pcheck" title="Certificate checks stay on for Codex token refresh no matter what.">
+              <input type="checkbox" id="setTlsStrict" aria-describedby="strictWarn">
+              <span>Strict TLS â€” never skip certificate checks</span>
+            </label>
+            <p class="note" id="strictWarn">Recommended. Overrides the skip below, so no request in Forge can turn verification off.</p>
+            <label class="pcheck" title="Disables certificate checks only for requests from this app that opt in. Other HTTPS calls (including Codex token refresh) keep verification on.">
+              <input type="checkbox" id="setInsecure" aria-describedby="tlsWarn">
+              <span>Skip TLS verification</span>
+            </label>
+            <p class="note" id="tlsWarn">Certificates will not be checked for provider API calls. A network attacker can intercept traffic. Confirm when enabling.</p>
+          </div>
+
+          <div class="paramgroup" id="vaultSealGroup">
+            <h4 class="paramtitle">Vault</h4>
+            <p class="note" id="vaultSealNote">Seal the prompt profile with a passphrase. PBKDF2 does not make a short passphrase safe.</p>
+            <div class="prow">
+              <label for="sealPass">New passphrase</label>
+              <div class="passwrap">
+                <input id="sealPass" type="password" autocomplete="new-password" aria-describedby="sealStrengthLabel">
+                <button type="button" class="passtoggle" id="sealPassToggle" aria-pressed="false" aria-label="Show passphrase">Show</button>
+              </div>
+            </div>
+            <div class="strength" id="sealStrength" hidden>
+              <div class="strengthbar" aria-hidden="true"><span id="sealStrengthFill"></span></div>
+              <span id="sealStrengthLabel">very weak</span>
+            </div>
+            <div class="prow">
+              <label for="sealPass2">Confirm</label>
+              <div class="passwrap">
+                <input id="sealPass2" type="password" autocomplete="new-password">
+                <button type="button" class="passtoggle" id="sealPass2Toggle" aria-pressed="false" aria-label="Show confirmation">Show</button>
+              </div>
+            </div>
+            <div class="cardrow tight">
+              <button type="button" id="sealVaultBtn">Seal vault</button>
+              <span class="err" id="sealErr"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="pane" id="paneLook" role="tabpanel" aria-labelledby="tabLook" hidden>
+          <div class="panehead">
+            <div>
+              <h3>Appearance</h3>
+              <p class="note">Pick the fire you work in. The palette follows you across the whole window.</p>
+            </div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Theme</h4>
+            <div class="themegrid" id="themeGrid" role="radiogroup" aria-label="Theme"></div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Feedback</h4>
+            <label class="pcheck"><input type="checkbox" id="setSound" checked><span>Interface sounds</span></label>
+          </div>
+        </section>
+
+        <section class="pane" id="panePrompts" role="tabpanel" aria-labelledby="tabPrompts" hidden>
+          <div class="panehead">
+            <div>
+              <h3>Prompts</h3>
+              <p class="note">Your own instructions, injected in front of every turn.</p>
+            </div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Custom prompt</h4>
+            <label class="pcheck"><input type="checkbox" id="setPromptOn"><span>Inject this prompt into every turn</span></label>
+            <textarea id="customPrompt" class="promptbox" rows="10" spellcheck="false"
+              placeholder="Answer in French.&#10;Prefer small diffs.&#10;Always list the files you touched."></textarea>
+            <p class="note" id="promptState">Write your instructions here, then switch them on. They are
+            saved with the rest of your Forge settings on this machine.</p>
+            <div class="promptrow">
+              <span class="promptcount" id="promptCount">0 characters</span>
+              <button type="button" class="pbtn" id="promptClear">Clear</button>
+            </div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Saved prompts</h4>
+            <div class="promptrow">
+              <input id="promptName" type="text" class="promptname" maxlength="60"
+                placeholder="Name this prompt, e.g. French replies">
+              <button type="button" class="pbtn" id="promptSave">Save</button>
+            </div>
+            <p class="note">Save the text above as a named prompt, then pick it back with one click.
+            Your edits save on their own — Save only files a new entry.</p>
+            <div class="promptlist" id="promptList"></div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">What Forge already sends</h4>
+            <p class="note">Your text is added after Forge's own prompt and before the turn itself,
+            so it reads as the last instruction the model follows. Leave the switch off to keep your
+            text here without sending it anywhere.</p>
+          </div>
+        </section>
+
+        <section class="pane" id="paneCredits" role="tabpanel" aria-labelledby="tabCredits" hidden>
+          <div class="panehead">
+            <div>
+              <h3>Credits</h3>
+              <p class="note">Who built Forge, and the terms it ships under.</p>
+            </div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">People</h4>
+            <div class="creditrow"><span class="creditrole">Original creator</span><span class="creditname">twaai</span></div>
+            <div class="creditrow"><span class="creditrole">Development</span><span class="creditname">JusDeFruis</span></div>
+            <div class="creditrow"><span class="creditrole">Version</span><span class="creditname">Forge 3.2.0</span></div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">License</h4>
+            <div class="creditrow"><span class="creditrole">Copyright</span><span class="creditname">2026 twaai</span></div>
+            <div class="creditrow"><span class="creditrole">Terms</span><span class="creditname">Private &amp; proprietary</span></div>
+            <div class="creditrow"><span class="creditrole">Distribution</span><span class="creditname">All rights reserved</span></div>
+            <p class="note">No permission is granted to use, copy, modify, merge, publish,
+            distribute, sublicense, or sell this software in whole or in part without the explicit
+            written permission of the copyright holder. Access to the repository does not
+            constitute permission to redistribute it. The full grant ships in the LICENSE file.</p>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Disclaimer</h4>
+            <p class="note"><strong>This tool is provided "as is"</strong> without warranty of any
+            kind. The authors are not responsible for direct or indirect damages, data loss or
+            corruption, unauthorized use or misuse, and security vulnerabilities.</p>
+            <p class="note"><strong>Authorized use only.</strong> Forge may only be used to test
+            systems you own or have explicit written permission to test. Do not use it to attack
+            systems you do not own, or to handle material you are not permitted to hold.</p>
+            <p class="note">By using Forge you accept full legal responsibility for your actions.
+            Consult a lawyer if you are unsure whether your use case is covered. Model output is
+            untrusted input: review it before you act on it.</p>
+            <p class="note">The full text ships in the LICENSE file. Nothing there limits rights
+            that cannot lawfully be waived.</p>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Legal notice</h4>
+            <p class="note">Forge is a prompt-engineering tool for authorized research and
+            evaluation only. Do not use it to attack systems you do not own or to handle material
+            you are not permitted to hold. Model output is untrusted input: review it before you
+            act on it.</p>
+            <p class="note">Provider, model, and product names referenced in the catalog belong to
+            their respective owners. Forge is not affiliated with, endorsed by, or sponsored by
+            any model provider. Keys, chats, and configuration stay on this machine; data only
+            leaves it for the providers you configure yourself.</p>
+            <p class="note">Report security issues privately through GitHub's &ldquo;Report a
+            vulnerability&rdquo; channel rather than a public issue — see SECURITY.md.</p>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Third-party components</h4>
+            <div class="creditrow"><span class="creditrole">Windows webview</span><span class="creditname">@webviewjs/webview</span></div>
+            <div class="creditrow"><span class="creditrole">HTTP client</span><span class="creditname">undici</span></div>
+            <div class="creditrow"><span class="creditrole">Bundler</span><span class="creditname">esbuild</span></div>
+            <div class="creditrow"><span class="creditrole">Runtime</span><span class="creditname">Node.js</span></div>
+            <div class="creditrow"><span class="creditrole">Windows shell</span><span class="creditname">Edge WebView2</span></div>
+            <p class="note">Each component ships under its own license; the full list and its terms
+            are in the NOTICE file in the repository.</p>
+            <p class="note">Archive, Markdown, and interface work is Forge's own: the ZIP writer,
+            the Markdown renderer, and every icon are implemented in this repository and pull in
+            no further dependency.</p>
+          </div>
+        </section>
+
+
+      </div>
+    </div>
+
+    <footer class="sheetfoot">
+      <span id="setFootLeft">storage &middot; <b id="setDrawer">Forge-3.2</b></span>
+    </footer>
+  </div>
+</div>
+
+<div class="modal" id="unlock" hidden>
+  <div class="card">
+    <svg class="glyph" viewBox="0 0 200 200" aria-hidden="true"><use href="#forgeSword"></use></svg>
+    <h2>Unlock the vault</h2>
+    <p>Unlock the sealed FORGE 3.2 profile and encrypted chat drawer.</p>
+    <div class="passwrap">
+      <input id="pass" type="password" placeholder="Passphrase" autocomplete="current-password">
+      <button type="button" class="passtoggle" id="passToggle" aria-pressed="false" aria-label="Show passphrase">Show</button>
+    </div>
+    <div class="cardrow">
+      <button type="button" id="unlockBtn">Unlock</button>
+      <span class="err" id="unlockErr"></span>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="projectModal" hidden>
+  <div class="card pickcard">
+    <div class="cardhead">
+      <h2>Create Project</h2>
+      <button type="button" class="modalx" id="projectClose" aria-label="Close"><svg width="12" height="12" aria-hidden="true"><use href="#icoCross"></use></svg></button>
+    </div>
+
+    <label class="pname">
+      <svg width="14" height="14" aria-hidden="true"><use href="#icoFolder"></use></svg>
+      <input id="projectName" type="text" placeholder="Project name" autocomplete="off" spellcheck="false">
+    </label>
+
+    <div class="plabel">Project Folder</div>
+    <div class="pdrop" id="folderDrop">
+      <div class="cardrow">
+        <input id="folderPath" type="text" placeholder="Folder path" autocomplete="off" spellcheck="false">
+        <button type="button" id="folderBrowse" class="btn">Browse</button>
+      </div>
+      <div class="pchip" id="folderChip" hidden>
+        <svg width="13" height="13" aria-hidden="true"><use href="#icoFolder"></use></svg>
+        <span id="folderChipName"></span>
+        <button type="button" class="chipx" id="folderChipX" aria-label="Remove folder"><svg width="11" height="11" aria-hidden="true"><use href="#icoCross"></use></svg></button>
+      </div>
+    </div>
+
+    <p class="err" id="workspaceErr"></p>
+
+    <div class="cardrow end">
+      <button type="button" class="linkbtn" id="projectCancel">Cancel</button>
+      <button type="button" id="projectCreate" disabled>Create Project</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="folderPickerModal" hidden>
+  <div class="card pickcard folder-picker">
+    <div class="cardhead">
+      <h2>Select Project Folder</h2>
+      <button type="button" class="modalx" id="folderPickerClose" aria-label="Close"><svg width="12" height="12" aria-hidden="true"><use href="#icoCross"></use></svg></button>
+    </div>
+
+    <div class="picker-current">
+      <svg width="13" height="13" aria-hidden="true"><use href="#icoFolder"></use></svg>
+      <span id="fpCurrent">This PC</span>
+    </div>
+
+    <div class="picker-tree" id="fpTree" role="tree" aria-label="Folder tree"></div>
+
+    <div class="cardrow end">
+      <button type="button" class="linkbtn" id="folderPickerCancel">Cancel</button>
+      <button type="button" class="btn accent" id="folderPickerSelect" disabled>Select Folder</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="permitModal" hidden>
+  <div class="card pickcard">
+    <h2 id="permitTitle">Allow this?</h2>
+    <p id="permitNote"></p>
+    <pre class="permit" id="permitDetail"></pre>
+    <div class="cardrow">
+      <button type="button" id="permitOnce">Allow once</button>
+      <button type="button" id="permitAlways">Always allow</button>
+      <button type="button" id="permitDeny">Deny</button>
+    </div>
+  </div>
+</div>
+
+<div class="setup" id="setup" hidden>
+  <div class="setupbox">
+    <div class="setupsteps" id="setupDots" aria-hidden="true"></div>
+
+    <section class="setupstep" data-step="0">
+      <div class="setupmark" aria-hidden="true">
+        <svg width="34" height="34" viewBox="0 0 14 14" fill="currentColor">
+          <path d="M7 .9c.36 2.6 1.6 3.84 4.2 4.2-2.6.36-3.84 1.6-4.2 4.2C6.64 6.7 5.4 5.46 2.8 5.1 5.4 4.74 6.64 3.5 7 .9Z"></path>
+        </svg>
+      </div>
+      <h2>Welcome to Forge</h2>
+      <p class="setuplead">A private prompt workshop that lives on your machine. Two short steps
+      and you are set: pick the look you want, then drop in the API keys of the providers you
+      use. Everything stays local, and you can change all of it later in Settings.</p>
+      <ul class="setuplist">
+        <li>Your keys, chats and settings never leave this computer</li>
+        <li>Nothing is uploaded anywhere until you configure a provider</li>
+        <li>No account, no email, no telemetry</li>
+      </ul>
+    </section>
+
+    <section class="setupstep" data-step="1" hidden>
+      <h2>Pick your fire</h2>
+      <p class="setuplead">The palette follows you across the whole window. You can change it whenever.</p>
+      <div class="themegrid" id="setupThemes" role="radiogroup" aria-label="Theme"></div>
+    </section>
+
+    <section class="setupstep" data-step="2" hidden>
+      <h2>Your provider keys</h2>
+      <p class="setuplead">Add one and Forge can talk to that provider. Skip any you do not use &mdash;
+      you can add them later under Settings &rarr; API keys.</p>
+      <div class="setupkeys" id="setupKeys"></div>
+    </section>
+
+    <section class="setupstep" data-step="3" hidden>
+      <h2>You are ready</h2>
+      <p class="setuplead" id="setupSummary">Forge is configured. Everything below is optional and
+      can be changed at any time.</p>
+      <div class="setupdone">
+        <div class="setupdonerow"><span>Look</span><b id="setupThemeName">—</b></div>
+        <div class="setupdonerow"><span>Keys added</span><b id="setupKeyCount">0</b></div>
+        <div class="setupdonerow"><span>Stored in</span><b id="setupStore">—</b></div>
+      </div>
+      <p class="setuptip">Press <kbd>Ctrl</kbd> + <kbd>P</kbd> any time to open Settings.</p>
+    </section>
+
+    <footer class="setupfoot">
+      <button type="button" class="pbtn ghost" id="setupBack" hidden>Back</button>
+      <span class="setupfoot-fill"></span>
+      <button type="button" class="pbtn ghost" id="setupSkip">Skip</button>
+      <button type="button" class="pbtn" id="setupNext">Get started</button>
+    </footer>
+  </div>
+</div>
+
+<div class="modal" id="askModal" hidden>
+  <div class="askbox">
+    <div class="askhead">
+      <h2 id="askQuestion">The model has a question</h2>
+      <button type="button" class="askclose" id="askSkip" aria-label="Skip this question" title="Skip this question">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+          <path d="M3.4 3.4 10.6 10.6M10.6 3.4 3.4 10.6"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="askopts" id="askOptions" hidden></div>
+    <div class="askfoot">
+      <span class="askother" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.4 5.1 5.1 8.4a1.6 1.6 0 0 0 2.3 2.3l3.3-3.3a2.9 2.9 0 0 0-4.1-4.1L3.3 6.6a4.2 4.2 0 0 0 6 6l2.6-2.6"></path>
+        </svg>
+      </span>
+      <input id="askInput" type="text" placeholder="Other" autocomplete="off" aria-label="Your own answer">
+      <button type="button" id="askSend">Pass</button>
+    </div>
+  </div>
+</div>
+
+<script src="bridge.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

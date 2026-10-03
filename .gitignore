@@ -1,0 +1,26 @@
+node_modules/
+dist/
+# the built binaries stay out of the history, the folder itself is tracked
+release/*
+!release/README.md
+packaging/sea/tools/
+__pycache__/
+*.pyc
+.env
+keys/
+*.key
+config.json
+memory.json
+saved/
+chats/
+history.key
+*.log
+*.tmp
+.DS_Store
+
+# a local id left by an external tool, not part of Forge
+.freebuff/
+
+# the test suite stays on this machine: it is a development harness, not part
+# of the shipped app, and the files are kept on disk untracked
+tests/

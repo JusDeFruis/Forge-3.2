@@ -1,0 +1,32 @@
+Forge
+Copyright 2026 twaai
+
+Original creator: twaai. Developed and maintained by JusDeFruis.
+
+Licensed under the terms of the LICENSE file distributed with this repository.
+This software is private and proprietary and is distributed WITHOUT ANY
+WARRANTY; see the LICENSE file for the full terms.
+
+Runtime dependencies, installed from npm under their respective licenses:
+
+- @webviewjs/webview - MIT
+- undici - MIT
+
+Development dependencies, not shipped in the executable:
+
+- esbuild - MIT
+- typescript - Apache-2.0
+- @types/node - MIT
+
+Components used when building the Windows executable:
+
+- Node.js - MIT
+- rcedit 5.0.2 - MIT
+- Microsoft Edge WebView2 Runtime - provided by Microsoft under its own terms
+
+Model, provider, and product names referenced in Forge's catalog belong to
+their respective owners; Forge is not affiliated with, endorsed by, or
+sponsored by any of them.
+
+Forge is a prompt-engineering tool for authorized research and evaluation. See
+SECURITY.md for the responsible-use policy and how to report a vulnerability.

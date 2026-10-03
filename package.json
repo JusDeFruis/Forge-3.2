@@ -1,0 +1,28 @@
+{
+  "name": "forge",
+  "version": "3.2.0",
+  "private": true,
+  "description": "Forge 3.2 desktop prompt workshop — TypeScript edition",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/main.js",
+    "dev": "node build.mjs && node dist/main.js",
+    "test": "node build.mjs && tsc --noEmit && node --test \"dist/tests/*.test.js\"",
+    "pack:exe": "node packaging/sea/pack-exe.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@webviewjs/webview": "^0.4.7",
+    "undici": "^8.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0"
+  }
+}

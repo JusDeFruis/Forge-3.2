@@ -1,0 +1,54 @@
+Copyright (c) 2026. All rights reserved.
+
+This software and its source code are private and proprietary.
+
+No license or permission is granted to any person to use, copy, modify, merge,
+publish, distribute, sublicense, or sell copies of this software, in whole or in
+part, without the explicit prior written permission of the copyright holder.
+
+Access to this repository does not constitute permission to redistribute it.
+
+LIMITED USE PERMISSION
+
+The copyright holder grants a limited, revocable, non-transferable permission to
+run this software, without copying it and without redistributing it, solely to
+test systems you own or that you have explicit written permission to test.
+
+That permission carries no other right. It does not permit publication,
+distribution, sublicensing, resale, or removing any notice from the software.
+
+AUTHORIZED USE ONLY
+
+This tool may only be used to test systems you own or have explicit written
+permission to test. Do not use it to attack systems you do not own or to handle
+material you are not permitted to hold.
+
+DISCLAIMER
+
+THIS TOOL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The authors are not responsible for:
+
+- Direct or indirect damages of any kind
+- Data loss or corruption, including files written by the agent
+- Unauthorized use or misuse of the software or of any system it touches
+- Security vulnerabilities in the software or in the systems it is run against
+- Model output, which is untrusted and must be reviewed before it is acted on
+- Third-party provider behaviour, availability, or data handling
+
+By using this tool you accept full legal responsibility for your actions.
+Consult a lawyer if you are unsure whether your use case is covered.
+
+Nothing in this file limits rights that cannot lawfully be waived, and this
+disclaimer does not exclude liability that applicable law does not allow to be
+excluded.
+
+REPORTING A SECURITY ISSUE
+
+Report vulnerabilities privately through GitHub's "Report a vulnerability"
+channel rather than a public issue. See SECURITY.md.
