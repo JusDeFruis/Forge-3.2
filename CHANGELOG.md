@@ -2,6 +2,18 @@
 
 ## Forge 3.2
 
+- **A refusal no longer follows the reader into the next message.** Asking for
+  the prompt was answered with a refusal, and then asking something unrelated —
+  "what do we do?" — got the same sentence back. The refusal was being kept in
+  the history as context, which reads to the model as the shape of the whole
+  conversation, so it declined again. An answered refusal is now dropped from
+  what the next turn is sent, and the model is told plainly that the declined
+  exchange is closed and the new message is a fresh request. What the reader
+  already saw stays in the transcript; only the anchor is gone.
+- **Refusals in French are now recognised at all.** Every pattern the reply
+  checker had was English, so "Désolé, je ne peux pas partager cela" read as a
+  perfectly good answer: no retry, no hold, and nothing to notice the turn had
+  gone wrong. The detector understands both languages now.
 - **Venice is now reachable.** It was registered as a backend with all 128 of
   its models listed, and **none of them could be selected**: the model picker is
   a curated allowlist and Venice was absent from it entirely. It is now offered,

@@ -28,6 +28,10 @@ Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
 
 ## What changed in 3.2
 
+- A refusal no longer sticks. Ask for the prompt, get told no, then ask
+  something else and the answer comes back — the declined exchange is no longer
+  handed to the model as context, and it is told the thread continues. Refusals
+  written in French are recognised too, which they were not before
 - Venice is now actually selectable. It shipped as a backend with all 128 of
   its models listed and none of them reachable, because the picker is a curated
   allowlist it was missing from. Every one of those models is free, and the

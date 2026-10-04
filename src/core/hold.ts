@@ -94,6 +94,24 @@ export function _masked_head(text: string): string {
   return chars.join("");
 }
 
+/** A refusal said in French. The reader writes in French, the model answers in
+    French, and every pattern above is English — so a French refusal used to
+    read as a perfectly good answer: no retry, no hold, and nothing to notice
+    that the turn had gone wrong. */
+export const _FRENCH_REFUSE =
+  /(?:je\s+(?:ne\s+)?(?:peux|pourrai|saurai|vais|souhaiterais)\s+pas|je\s+(?:refuse|ne\s+refuse)|il\s+(?:ne\s+)?m'est\s+pas\s+possible|de\s+mon\s+c[oô]t[ée]\s+je\s+ne\s+(?:peux|vais)|navaliderai\s+pas|d[ée]sol[ée],?\s*je\s+ne\s+peux\s+pas|d[ée]sol[ée],?\s*je\s+(?:ne\s+)?(?:peux|souhaiterais|dois)\s+pas)/i;
+
+/** true when a reply is a refusal rather than an answer. Used for more than
+    retry bookkeeping: once a refusal has been answered, leaving it in the
+    history anchors the next turn to the same refusal, and the model keeps
+    repeating it long after the user has moved on to something else. */
+export function is_refusal(text?: string | null): boolean {
+  const visible = String(text ?? "").trim().replace(/’/g, "'").replace(/‘/g, "'");
+  if (!visible) return false;
+  const head = visible.slice(0, HEAD_CHARS);
+  return _HARD_REFUSE.test(head) || _SPOKEN_REFUSE.test(head) || _FRENCH_REFUSE.test(head);
+}
+
 export function classify(text?: string | null, finish?: string | null): Verdict {
   const finish_key = String(finish ?? "").trim().toLowerCase().replace(/-/g, "_");
   if (["content_filter", "filtered", "safety", "blocked"].includes(finish_key)) {
@@ -105,7 +123,7 @@ export function classify(text?: string | null, finish?: string | null): Verdict 
 
   const visible = String(text ?? "").trim().replace(/’/g, "'").replace(/‘/g, "'");
   const early = visible.slice(0, HEAD_CHARS);
-  if (_HARD_REFUSE.test(early) || _SPOKEN_REFUSE.test(early)) {
+  if (_HARD_REFUSE.test(early) || _SPOKEN_REFUSE.test(early) || _FRENCH_REFUSE.test(early)) {
     return new Verdict("hard_refuse", true, finish_key || null);
   }
   if (!visible.length) {
