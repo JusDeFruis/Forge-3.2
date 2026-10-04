@@ -171,6 +171,11 @@ export class Forge3Session extends ForgeSessionBase {
     const out: Array<Record<string, any>> = [];
     for (const name of Object.keys(P.BACKENDS)) {
       const backend = P.BACKENDS[name];
+      /* a gateway has no key to paste and no key to remove: it is a
+         subscription read from a login on this machine, and it is listed in
+         its own section. Showing it here with a Replace button would offer an
+         action that does not exist. */
+      if (backend.gateway) continue;
       let source = 'missing';
       let detail = '';
       if (backend.dialect === 'codex') {

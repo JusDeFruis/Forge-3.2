@@ -87,9 +87,11 @@ function connectDelay(attempt: number): number {
   return 250 * 2 ** attempt;
 }
 
-/** the wait before trying a busy endpoint again: quick enough that the turn
-    still feels instant once the endpoint frees up */
-function busyDelay(attempt: number): number {
+/** the wait before trying a busy endpoint again. A rate limit needs real
+    seconds to reset, so it is given more than a capacity blip: retrying a 429
+    after a second just spends the quota twice. */
+function busyDelay(status: number, attempt: number): number {
+  if (status === 429) return 4000 * attempt;
   return 1200 * attempt;
 }
 
@@ -243,7 +245,7 @@ export async function httpRequest(url: string, options: HttpRequestOptions = {})
           /* a body that will not read is not a reason to keep it */
         }
         attemptIndex += 1;
-        await sleep(busyDelay(attemptIndex));
+        await sleep(busyDelay(res.status, attemptIndex));
         continue;
       } catch (error) {
         lastError = error;

@@ -19,6 +19,16 @@
   governs providers. A model the gateway does not carry is refused by name
   instead of sitting in the config forever, looking selected and never
   appearing.
+- **A gateway is no longer offered as a key.** Codex sat in Provider keys with
+  a Replace button for a file that does not exist — there is no key to paste,
+  because it is a subscription read from a login on this machine. The key list
+  skips gateways now; they live in their own section and nowhere else.
+- **A gateway throttle says which plan is being throttled.** "Rate limit
+  reached" on its own reads like a fault in the app. On a free Codex login it
+  now names the plan and says what to do about it, because that tier really is
+  throttled hard and no amount of retrying changes it. A 429 is also given
+  real seconds to reset before trying again, instead of about one: retrying a
+  rate limit after a second only spends the quota twice.
 - **A refusal no longer follows the reader into the next message.** Asking for
   the prompt was answered with a refusal, and then asking something unrelated —
   "what do we do?" — got the same sentence back. The refusal was being kept in

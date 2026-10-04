@@ -1066,7 +1066,22 @@ export function format_provider_error(error: unknown, backend_name: string): str
     }
     return `${label} rejected the request (HTTP 400). Check the pinned model and its request settings.`;
   }
-  if (status === 429) return `${label} rate limit reached. Wait briefly, then retry.`;
+  if (status === 429) {
+    /* a gateway is throttled by the subscription behind it, so the plan is
+       named: "rate limit" on its own reads like a fault in the app rather
+       than what it is, which is the tier the login is on */
+    if (backend_key === 'codex') {
+      const tier = codex_plan().plan;
+      if (tier === 'free') {
+        return 'Codex rate limit reached, and this login is on the free plan. ' +
+          'Free Codex is throttled hard — wait a minute, use another model, or upgrade the plan.';
+      }
+      if (tier) {
+        return `Codex rate limit reached on the ${tier} plan. Wait briefly, then retry.`;
+      }
+    }
+    return `${label} rate limit reached. Wait briefly, then retry.`;
+  }
   if (status !== null && status >= 500) return `${label} is temporarily unavailable (HTTP ${status}). Retry shortly.`;
   if (raw.includes('timed out') || raw.includes('timeout')) return `${label} request timed out. Check the connection, then retry.`;
   if (raw.includes('connection') || raw.includes('network')) return `${label} connection failed. Check the network, then retry.`;
