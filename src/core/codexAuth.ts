@@ -31,6 +31,51 @@ export function auth_path(): string {
   return path.join(root, 'auth.json');
 }
 
+/** What plan the local ChatGPT login is actually on, read from the id token the
+    login already stores. `codex login status` only says "Logged in using
+    ChatGPT", so the claim is the honest source.
+
+    This is what the reader complained about: a gateway that reports `free`
+    cannot carry the models a paid plan carries, and the app used to offer them
+    anyway. */
+export function plan(): { plan: string | null; mode: string | null; until: string | null } {
+  let data: Record<string, any>;
+  try {
+    data = _read();
+  } catch {
+    return { plan: null, mode: null, until: null };
+  }
+  const mode = String(data['auth_mode'] || '').trim() || null;
+  const raw = data['tokens'];
+  const tokens = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const id = String(tokens['id_token'] || '').trim();
+  if (!id) return { plan: null, mode, until: null };
+  const claims = _jwt_claims(id);
+  const auth = claims['https://api.openai.com/auth'];
+  const bag = auth && typeof auth === 'object' && !Array.isArray(auth) ? auth : {};
+  return {
+    plan: String(bag['chatgpt_plan_type'] || '').trim().toLowerCase() || null,
+    mode,
+    until: String(bag['chatgpt_subscription_active_until'] || '').trim() || null,
+  };
+}
+
+/** decode a JWT payload without verifying it: nothing here is trusted for an
+    access decision, the token is only read for the claim names it carries */
+function _jwt_claims(token: string): Record<string, any> {
+  const parts = token.split('.');
+  if (parts.length < 2) return {};
+  try {
+    const raw = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = raw + '='.repeat((4 - (raw.length % 4)) % 4);
+    const json = Buffer.from(padded, 'base64').toString('utf8');
+    const parsed = JSON.parse(json);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 export function available(): boolean {
   let data: Record<string, any>;
   try {

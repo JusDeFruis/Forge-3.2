@@ -59,6 +59,10 @@ export const _DEFAULTS: ForgeConfig = {
   'saved_prompts': [],
   /* providers the reader brings themselves */
   'custom_providers': [],
+  /* which gateway models are switched on. A gateway is only usable through a
+     subscription that lives elsewhere, so which models it may carry is the
+     reader's call, kept here per gateway id. */
+  'gateway_models': {},
   /* the welcome setup runs once and never again */
   'setup_done': false,
 };
@@ -152,6 +156,28 @@ export function clean_custom_providers(raw: any): CustomProvider[] {
   return out;
 }
 
+/** gateway id -> the models kept switched on. An empty or absent entry means
+    the gateway offers everything it can, which is the right default: it is the
+    subscription that limits it, not this list. */
+export function clean_gateway_models(raw: any): Record<string, string[]> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out: Record<string, string[]> = {};
+  for (const [id, value] of Object.entries(raw as Record<string, any>)) {
+    const key = clean_provider_id(id);
+    if (!key || !Array.isArray(value)) continue;
+    const models: string[] = [];
+    for (const model of value.slice(0, 64)) {
+      /* only a real string: coercing a number would leave a name in the config
+         that no gateway can ever carry */
+      if (typeof model !== 'string') continue;
+      const name = model.trim().slice(0, 160);
+      if (name && !models.includes(name)) models.push(name);
+    }
+    out[key] = models;
+  }
+  return out;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -206,6 +232,7 @@ export function load(): ForgeConfig {
   cfg['custom_prompt'] = typeof cfg['custom_prompt'] === 'string' ? cfg['custom_prompt'] : '';
   cfg['saved_prompts'] = clean_saved_prompts(cfg['saved_prompts']);
   cfg['custom_providers'] = clean_custom_providers(cfg['custom_providers']);
+  cfg['gateway_models'] = clean_gateway_models(cfg['gateway_models']);
   cfg['projects'] = clean_projects(cfg['projects']);
   for (const field of _MODEL_FIELDS) {
     const value = cfg[field];

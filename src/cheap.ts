@@ -212,6 +212,9 @@ export function is_allowed(backend: string, model: string): boolean {
      themselves is not on it and never will be, and refusing their own model
      would leave the endpoint configured but unusable. */
   if (P.is_custom_provider(backend)) return true;
+  /* a gateway is limited by the subscription behind it, not by this table, so
+     what counts is what the reader left switched on for it */
+  if (P.is_gateway(backend)) return P.gateway_model_on(backend, model);
   const allowed = CHEAP_BY_BACKEND[backend];
   return Boolean(allowed) && allowed.includes(model);
 }

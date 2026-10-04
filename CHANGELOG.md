@@ -2,6 +2,23 @@
 
 ## Forge 3.2
 
+- **Gateways: subscriptions are now their own category.** A provider is an API
+  key you paste. A gateway is something you already pay for, or are already
+  signed into on this machine, that Forge connects to as a bridge — there is no
+  key to paste, because there is no key. Settings gained a **Gateways** section
+  above the providers, with a rule between the two, so the reader never has to
+  guess which kind of thing a name refers to.
+- **The plan is read, not guessed.** `codex login status` only says "Logged in
+  using ChatGPT", so Forge reads the plan from the claim the login already
+  stores (`chatgpt_plan_type`) and shows it: `free`, `plus`, `pro`. No login
+  means the plan is null rather than an assumption, and the section says which
+  command to run. Verified on a real login.
+- **Which models a gateway carries is the reader's call.** Each offered model
+  is a switch, and switching one off removes it from the picker: the allowance
+  is driven by the selection rather than by the curated cheap floor that
+  governs providers. A model the gateway does not carry is refused by name
+  instead of sitting in the config forever, looking selected and never
+  appearing.
 - **A refusal no longer follows the reader into the next message.** Asking for
   the prompt was answered with a refusal, and then asking something unrelated —
   "what do we do?" — got the same sentence back. The refusal was being kept in

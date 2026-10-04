@@ -318,6 +318,7 @@ export class ForgeSessionBase {
     this._event_sink = on_event ?? null;
     this._cfg = config.load();
     P.register_custom_providers(this._cfg['custom_providers']);
+    P.set_gateway_models(this._cfg['gateway_models']);
     this._apply_transport();
     for (const room of ROOMS) {
       this._rooms[room] = new RoomState();
@@ -544,6 +545,7 @@ export class ForgeSessionBase {
       custom_prompt_on: Boolean(this._cfg['custom_prompt_on']),
       saved_prompts: config.clean_saved_prompts(this._cfg['saved_prompts']),
       custom_providers: config.clean_custom_providers(this._cfg['custom_providers']),
+      gateways: P.gateway_status(this._cfg['gateway_models']),
       setup_done: Boolean(this._cfg['setup_done']),
       first_run: !this._cfg['setup_done'],
       keys,
@@ -1472,6 +1474,7 @@ export class ForgeSessionBase {
       'saved_prompts',
       'setup_done',
       'custom_providers',
+      'gateway_models',
     ]);
     const clean: Record<string, any> = {};
     for (const [key, value] of Object.entries(fields)) {
@@ -1559,6 +1562,25 @@ export class ForgeSessionBase {
       }
       clean['custom_providers'] = cleaned;
     }
+    if ('gateway_models' in clean) {
+      const raw = clean['gateway_models'];
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        return { ok: false, error: 'gateway_models must be a map of gateway to models' };
+      }
+      const cleaned = config.clean_gateway_models(raw);
+      /* a model that does not exist on that gateway would sit in the config
+         forever, looking selected and never appearing */
+      const stray = Object.entries(cleaned).find(([id, models]) =>
+        models.some((model) => {
+          const backend = P.BACKENDS[id];
+          return !backend || !backend.models.includes(model);
+        }),
+      );
+      if (stray) {
+        return { ok: false, error: `"${stray[1][0]}" is not a model that gateway carries` };
+      }
+      clean['gateway_models'] = cleaned;
+    }
     const limits: Record<string, [number, number]> = {
       anvil_probe_count: [2, 6],
       anvil_max_versions: [1, 3],
@@ -1635,6 +1657,7 @@ export class ForgeSessionBase {
     /* a provider that appeared, changed or was removed has to reach BACKENDS
        before the state is read, or the picker would lag one save behind */
     P.register_custom_providers(this._cfg['custom_providers']);
+    P.set_gateway_models(this._cfg['gateway_models']);
     this._apply_transport();
     const state = this.get_state();
     this._emit('state', null, { state });

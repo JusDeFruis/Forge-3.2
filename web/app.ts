@@ -2222,6 +2222,105 @@ interface EventPayload {
     });
   };
 
+  /* ─────────── gateways: subscriptions, not keys ─────────── */
+
+  interface GatewayItem {
+    id: string;
+    label: string;
+    connected: boolean;
+    plan: string | null;
+    mode: string | null;
+    renews: string | null;
+    offered: string[];
+    selected: string[];
+    blurb: string;
+    blocked: string;
+  }
+
+  const gatewayList = (): GatewayItem[] => {
+    const list = (state && (state as any).gateways) || [];
+    return Array.isArray(list) ? (list as GatewayItem[]) : [];
+  };
+
+  const saveGatewayModels = (next: Record<string, string[]>, label: string) => {
+    const api = bridge();
+    if (!api) return;
+    api.update_config({ gateway_models: next }).then((result: any) => {
+      if (result && result.ok === false) {
+        toast(String(result.error || 'the gateway models were not saved'));
+        return;
+      }
+      applyState((result && result.state) ?? null);
+      toast(label);
+    }).catch(() => toast('the gateway models were not saved'));
+  };
+
+  const paintGateways = () => {
+    const host = $el('setGatewayList');
+    const wrap = $el('setGateways');
+    const list = gatewayList();
+    wrap.hidden = !list.length;
+    if (!list.length) return;
+    host.innerHTML = '';
+
+    for (const item of list) {
+      const card = document.createElement('div');
+      card.className = 'gatewaycard' + (item.connected ? '' : ' off');
+
+      const top = document.createElement('div');
+      top.className = 'gcardtop';
+      const name = document.createElement('span');
+      name.className = 'gname';
+      name.textContent = item.label;
+      top.appendChild(name);
+      const live = document.createElement('span');
+      live.className = 'gstate ' + (item.connected ? 'on' : 'off');
+      live.textContent = item.connected ? 'connected' : 'not connected';
+      top.appendChild(live);
+      card.appendChild(top);
+
+      const plan = document.createElement('div');
+      plan.className = 'gplan';
+      if (item.plan) {
+        plan.textContent = 'plan: ' + item.plan + (item.renews ? ' · renews ' + item.renews.slice(0, 10) : '');
+      } else if (item.connected) {
+        plan.textContent = 'connected, but the plan could not be read from the login';
+      } else {
+        plan.textContent = 'no login found';
+      }
+      card.appendChild(plan);
+
+      const note = document.createElement('div');
+      note.className = 'gnote-line';
+      note.textContent = item.blocked || item.blurb;
+      card.appendChild(note);
+
+      const picker = document.createElement('div');
+      picker.className = 'gmodels';
+      for (const model of item.offered) {
+        const on = item.selected.includes(model);
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'gchip' + (on ? ' on' : '');
+        chip.textContent = model;
+        chip.title = on ? 'Switched on' : 'Switched off';
+        chip.addEventListener('click', () => {
+          const kept = on
+            ? item.selected.filter((m) => m !== model)
+            : [...item.selected, model];
+          const next: Record<string, string[]> = {};
+          gatewayList().forEach((g) => {
+            next[g.id] = g.id === item.id ? kept : g.selected;
+          });
+          saveGatewayModels(next, kept.length ? 'Gateway models updated' : 'Every gateway model is off');
+        });
+        picker.appendChild(chip);
+      }
+      card.appendChild(picker);
+      host.appendChild(card);
+    }
+  };
+
   const paintSettingsModels = () => {
     const label = state
       ? (state.draft_backend || '?') + ' · ' + (state.draft_model || 'no model')
@@ -2229,6 +2328,7 @@ interface EventPayload {
     $el('setPinned').textContent = label;
     ($el('setPinned') as HTMLElement).title = label;
 
+    paintGateways();
     paintModelList(
       $el('setModelList'),
       ($el('setModelSearch') as HTMLInputElement).value.trim().toLowerCase(),

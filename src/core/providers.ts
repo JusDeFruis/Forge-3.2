@@ -2,7 +2,12 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { CODEX_MODELS, CODEX_URL, CodexRequestError, delta_text, hidden_text, model_leaf, safe_error_detail, to_input } from './codexClient';
-import { CodexAuthError, available, session } from './codexAuth';
+import {
+  CodexAuthError,
+  available,
+  session,
+  plan as codex_plan,
+} from './codexAuth';
 import { httpRequest } from './httpTransport';
 import { restrictPrivateDir, writePrivateFile } from './secretFiles';
 import { OPENROUTER_MODELS, ORCAROUTER_MODELS, VENICE_MODELS, UNCENSORED_MODELS_BY_BACKEND, is_media_only_model } from './modelCatalogs';
@@ -555,6 +560,12 @@ export interface BackendOptions {
   request_body?: Record<string, object>;
   free?: boolean;
   blurb?: string;
+  /** A gateway is not a provider you hold a key for. It is something you
+      already pay for, or already have signed in to on this machine, that Forge
+      connects to as a bridge. Codex is the first: the login lives in
+      ~/.codex/auth.json and the plan is readable from it, so no key exists to
+      paste. Listed apart from providers for that reason. */
+  gateway?: boolean;
 }
 
 export class Backend {
@@ -568,6 +579,7 @@ export class Backend {
   request_body: Record<string, object>;
   free: boolean;
   blurb: string;
+  gateway: boolean;
 
   constructor(name: string, base_url: string, default_model: string, options: BackendOptions = {}) {
     this.name = name;
@@ -580,8 +592,13 @@ export class Backend {
     this.request_body = { ...(options.request_body ?? {}) };
     this.free = options.free ?? false;
     this.blurb = options.blurb ?? '';
+    this.gateway = options.gateway ?? false;
     if (!this.cascade.length) this.cascade = [this.default_model];
     if (!this.models.length) this.models = [...this.cascade];
+  }
+
+  get kind(): 'gateway' | 'provider' {
+    return this.gateway ? 'gateway' : 'provider';
   }
 
   get tag(): 'free' | 'paid' {
@@ -806,13 +823,14 @@ export const BACKENDS: Record<string, Backend> = {
       blurb: 'paid · OpenAI direct',
     },
   ),
-  codex: new Backend(
+codex: new Backend(
     'codex', 'https://chatgpt.com/backend-api/codex', 'gpt-6-sol',
     {
       dialect: 'codex',
+      gateway: true,
       cascade: ['gpt-6-sol', 'gpt-6-luna'],
       models: [...CODEX_MODELS],
-      blurb: 'your ChatGPT/Codex login · ~/.codex/auth.json',
+      blurb: 'your ChatGPT/Codex login · ~/.codex/auth.json · no key to paste',
     },
   ),
   mistral: new Backend(
@@ -1867,6 +1885,83 @@ export function register_custom_providers(entries: unknown): string[] {
     names.push(id);
   }
   return names;
+}
+
+export interface GatewayStatus {
+  id: string;
+  label: string;
+  connected: boolean;
+  /** the plan the local login reports, e.g. `free`, `plus`, `pro`. null when
+      there is no login to read */
+  plan: string | null;
+  mode: string | null;
+  renews: string | null;
+  /** every model the gateway could carry */
+  offered: string[];
+  /** the ones the reader kept switched on */
+  selected: string[];
+  blurb: string;
+  /** plain words for why this gateway cannot work, or '' when it can */
+  blocked: string;
+}
+
+/** Which gateways are switched on, and what the local login actually allows.
+    A gateway is never listed as working on the strength of a key the reader
+    pasted: it works or it does not depending on a subscription that lives
+    somewhere else, so the honest state is reported rather than assumed. */
+export function gateway_status(selected: Record<string, string[]> | null | undefined): GatewayStatus[] {
+  const out: GatewayStatus[] = [];
+  for (const [name, backend] of Object.entries(BACKENDS)) {
+    if (!backend.gateway) continue;
+    const info = backend.dialect === 'codex' ? codex_plan() : { plan: null, mode: null, until: null };
+    const connected = backend.dialect === 'codex' ? available() : false;
+    const offered = [...backend.models];
+    const keep = selected && typeof selected === 'object' && Array.isArray(selected[name])
+      ? selected[name].filter((model): model is string => typeof model === 'string' && offered.includes(model))
+      : offered;
+    let blocked = '';
+    if (!connected) {
+      blocked = backend.dialect === 'codex'
+        ? 'no ChatGPT login found — run `codex login` on this machine'
+        : 'not connected';
+    } else if (!keep.length) {
+      blocked = 'every model is switched off for this gateway';
+    }
+    out.push({
+      id: name,
+      label: name === 'codex' ? 'Codex (ChatGPT)' : name,
+      connected,
+      plan: info.plan,
+      mode: info.mode,
+      renews: info.until,
+      offered,
+      selected: keep.length ? keep : offered,
+      blurb: backend.blurb,
+      blocked,
+    });
+  }
+  return out;
+}
+
+export function is_gateway(name: string): boolean {
+  return Boolean(BACKENDS[String(name ?? '')]?.gateway);
+}
+
+/** gateway id -> the models the reader left switched on. Absent means the
+    gateway offers everything it can, which is the right default: the
+    subscription behind it is the limit, not this list. */
+let _gateway_models: Record<string, string[]> = {};
+
+export function set_gateway_models(selection: Record<string, string[]> | null | undefined): void {
+  _gateway_models = selection && typeof selection === 'object' && !Array.isArray(selection)
+    ? { ...selection }
+    : {};
+}
+
+export function gateway_model_on(backend: string, model: string): boolean {
+  const keep = _gateway_models[String(backend ?? '')];
+  if (!Array.isArray(keep) || !keep.length) return true;
+  return keep.includes(String(model ?? ''));
 }
 
 export function custom_provider_ids(): string[] {

@@ -3851,3 +3851,88 @@ html.theming .mrow {
 }
 
 
+
+/* ── gateways ─────────────────────────────────────────────────────────
+   Two kinds of source, and the reader should never have to guess which is
+   which: a gateway is something already paid for or already signed into, a
+   provider is an API key. The rule between them is the whole point. */
+
+.gateways {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.gthead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 2px 0 4px;
+}
+.providershead { margin-top: 4px; }
+.gtitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mid);
+  white-space: nowrap;
+}
+.gline {
+  flex: 1;
+  height: 1px;
+  min-width: 12px;
+  background: linear-gradient(90deg, var(--line) 0%, var(--line-soft) 100%);
+}
+.gnote {
+  font-size: 10.5px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gatewaycard {
+  border: 1px solid var(--signal-edge);
+  border-radius: var(--r-s);
+  background: var(--raise);
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: kidIn .24s cubic-bezier(.16, 1, .3, 1);
+}
+.gatewaycard.off { border-color: var(--line); }
+.gcardtop { display: flex; align-items: center; gap: 8px; }
+.gname { font-size: 13px; font-weight: 600; color: var(--ink); margin-right: auto; }
+.gstate {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+.gstate.off { color: var(--dim); }
+.gplan { font-family: var(--mono); font-size: 11px; color: var(--mid); }
+.gnote-line { font-size: 11px; color: var(--dim); line-height: 1.5; }
+.gmodels { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+.gchip {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: border-color .16s ease, color .16s ease, background .16s ease,
+    transform .16s cubic-bezier(.16, 1, .3, 1);
+}
+.gchip:hover { transform: translateY(-1px); border-color: var(--signal-edge); }
+.gchip:active { transform: translateY(0) scale(.96); }
+.gchip.on {
+  border-color: var(--signal);
+  background: var(--signal-soft);
+  color: var(--ink);
+}
