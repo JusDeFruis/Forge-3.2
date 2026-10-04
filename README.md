@@ -28,11 +28,13 @@ Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
 
 ## What changed in 3.2
 
-- Gateways are listed apart from providers, under a rule of their own. A
-  provider is a key you paste; a gateway is something you already pay for or
-  are already signed into, so there is nothing to paste. Forge reads the plan
-  from the local login — `free`, `plus`, `pro` — instead of guessing, and each
-  model a gateway can carry is a switch that really removes it from the picker
+- Gateways have their own tab in Settings. A provider is a key you paste; a
+  gateway is something you already pay for or are already signed into, so there
+  is nothing to paste. Forge reads the plan from the local login — `free`,
+  `plus`, `pro` — instead of guessing, and each model a gateway can carry is a
+  switch that really removes it from the picker
+- A gateway with no local login can be connected by hand: paste the credential,
+  it is validated and kept owner-only in the keys folder, never in the config
 - A refusal no longer sticks. Ask for the prompt, get told no, then ask
   something else and the answer comes back — the declined exchange is no longer
   handed to the model as context, and it is told the thread continues. Refusals

@@ -51,6 +51,17 @@
   registered among the uncensored models so it is labelled as one.
 - Qwen is now offered from four providers: OpenRouter, OrcaRouter, DashScope
   (Alibaba direct) and Venice, ten models on the last one.
+- **Gateways got their own tab in Settings**, between API keys and Parameters.
+  They used to sit inside the model list, where a subscription sat next to
+  things you paste a key into. There is now a place that is only about
+  subscriptions.
+- **A gateway with no login can be connected by hand.** A second machine, a
+  colleague's account, a container — anywhere `codex login` never ran — is not
+  stuck. The credential is checked before anything is written (it has to be a
+  JSON object carrying a token and an account id, or it is refused with the
+  reason), then kept owner-only in the keys folder, never in the config. A
+  local login still wins, so pasting one never overrides a real login on this
+  machine. Disconnecting removes it.
 - **The test suite is no longer in the repository.** `tests/` is gitignored and
   untracked; the files stay on this machine. Nothing in `src/`, `web/` or the
   build depends on them, so a fresh clone still builds and runs — only

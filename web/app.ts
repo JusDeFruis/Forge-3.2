@@ -45,6 +45,8 @@ interface PyWebViewAPI {
   backend_catalog: () => Promise<BackendItem[]>;
   pin_model: (backend: string, model: string) => Promise<{ ok: boolean; error?: string; state: StateData }>;
   save_key: (backend: string, value: string) => Promise<{ ok: boolean; error?: string; state: StateData }>;
+  connect_gateway: (gateway: string, credential: string) => Promise<{ ok: boolean; error?: string; state: StateData }>;
+  disconnect_gateway: (gateway: string) => Promise<{ ok: boolean; error?: string; state: StateData }>;
   delete_key: (backend: string) => Promise<{ ok: boolean; error?: string; state: StateData }>;
   list_sessions: () => Promise<SessionItem[]>;
   load_session: (id: string) => Promise<{ ok: boolean; error?: string; id: string; payload: SessionPayload }>;
@@ -2317,9 +2319,99 @@ interface EventPayload {
         picker.appendChild(chip);
       }
       card.appendChild(picker);
+
+      /* a gateway with no local login is not stuck: the credential can be
+         pasted, which is the only way in on a machine that has never run
+         `codex login` */
+      const acts = document.createElement('div');
+      acts.className = 'gacts';
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'pbtn';
+      link.textContent = item.connected ? 'Replace credential' : 'Connect manually';
+      link.addEventListener('click', () => openGatewayForm(item.id));
+      acts.appendChild(link);
+      if (item.connected) {
+        const drop = document.createElement('button');
+        drop.type = 'button';
+        drop.className = 'pbtn ghost';
+        drop.textContent = 'Disconnect';
+        drop.addEventListener('click', () => {
+          const api = bridge();
+          if (!api) return;
+          api.disconnect_gateway(item.id).then((result: any) => {
+            if (result && result.ok === false) {
+              toast(String(result.error || 'the gateway stayed connected'));
+              return;
+            }
+            applyState((result && result.state) ?? null);
+            toast(`${item.label} disconnected`);
+          }).catch(() => toast('the gateway stayed connected'));
+        });
+        acts.appendChild(drop);
+      }
+      card.appendChild(acts);
       host.appendChild(card);
     }
   };
+
+  let gatewayTarget = '';
+
+  /* one place that answers, so a refused attempt always replaces the previous
+     reason instead of sitting under it */
+  const gatewayAnswer = (message: string): void => {
+    ($el('gatewayErr') as HTMLElement).textContent = message;
+  };
+
+  const openGatewayForm = (id: string) => {
+    gatewayTarget = id;
+    const item = gatewayList().find((g) => g.id === id);
+    gatewayAnswer('');
+    ($el('gatewayHelp') as HTMLElement).textContent = item && item.id === 'codex'
+      ? 'Paste the auth.json that `codex login` wrote on the machine that has the ' +
+        'subscription. It is checked before anything is written, kept owner-only in the ' +
+        'keys folder, and never in the config. On this machine the existing login is ' +
+        'still preferred.'
+      : 'Paste the credential this gateway needs.';
+    ($el('gatewaySecret') as HTMLTextAreaElement).value = '';
+    ($el('gatewayErr') as HTMLElement).textContent = '';
+    $el('setGatewayForm').hidden = false;
+    ($el('gatewaySecret') as HTMLTextAreaElement).focus();
+  };
+
+  $el('gatewayCancel').addEventListener('click', () => {
+    $el('setGatewayForm').hidden = true;
+  });
+
+  $el('setGatewayForm').addEventListener('submit', (event: Event) => {
+    event.preventDefault();
+    const api = bridge();
+    if (!api) return gatewayAnswer('the engine is not reachable');
+    const credential = ($el('gatewaySecret') as HTMLTextAreaElement).value.trim();
+    if (!credential) return gatewayAnswer('paste the credential first');
+    const save = $el('gatewaySave') as HTMLButtonElement;
+    save.disabled = true;
+    save.textContent = 'Connecting…';
+    const done = (): void => {
+      save.disabled = false;
+      save.textContent = 'Connect';
+    };
+    api.connect_gateway(gatewayTarget, credential)
+      .then((result: any) => {
+        done();
+        if (result && result.ok === false) {
+          gatewayAnswer(String(result.error || 'that credential was not accepted'));
+          return;
+        }
+        applyState((result && result.state) ?? null);
+        $el('setGatewayForm').hidden = true;
+        toast('Gateway connected');
+      })
+      .catch((error: any) => {
+        done();
+        gatewayAnswer(String((error && error.message) || 'that credential was not accepted'));
+      });
+  });
 
   const paintSettingsModels = () => {
     const label = state

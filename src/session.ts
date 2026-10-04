@@ -12,6 +12,7 @@ import type {
   Judge as AnvilJudge,
 } from './core/anvil';
 import * as config from './core/config';
+import * as codexAuth from './core/codexAuth';
 import * as drafter from './core/drafter';
 import * as hold from './core/hold';
 import * as transport from './core/httpTransport';
@@ -1659,6 +1660,47 @@ export class ForgeSessionBase {
     P.register_custom_providers(this._cfg['custom_providers']);
     P.set_gateway_models(this._cfg['gateway_models']);
     this._apply_transport();
+    const state = this.get_state();
+    this._emit('state', null, { state });
+    return { ok: true, state };
+  }
+
+  /** Connect a gateway by hand, for a machine that has no login of its own:
+      another box, a colleague's account, a container. The credential is
+      validated before anything is written and lands in the locked keys folder
+      as an owner-only file, never in config.json. */
+  connect_gateway(gateway: string, credential: string): Record<string, any> {
+    const name = String(gateway || '').trim();
+    const backend = P.BACKENDS[name];
+    if (!backend || !backend.gateway) {
+      return { ok: false, error: 'that is not a gateway' };
+    }
+    if (backend.dialect !== 'codex') {
+      return { ok: false, error: `${name} has no manual connection yet` };
+    }
+    try {
+      codexAuth.store_credential(credential);
+    } catch (error) {
+      return { ok: false, error: _exc_msg(error) };
+    }
+    if (!codexAuth.available()) {
+      codexAuth.clear_stored();
+      return { ok: false, error: 'that credential does not carry a usable token' };
+    }
+    const state = this.get_state();
+    this._emit('state', null, { state });
+    return { ok: true, state };
+  }
+
+  disconnect_gateway(gateway: string): Record<string, any> {
+    const name = String(gateway || '').trim();
+    const backend = P.BACKENDS[name];
+    if (!backend || !backend.gateway) {
+      return { ok: false, error: 'that is not a gateway' };
+    }
+    if (backend.dialect === 'codex') {
+      codexAuth.clear_stored();
+    }
     const state = this.get_state();
     this._emit('state', null, { state });
     return { ok: true, state };

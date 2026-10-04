@@ -133,6 +133,14 @@ export class Api {
     return this._session.save_key(backend, key);
   }
 
+  connect_gateway(gateway: string, credential: string): Record<string, any> {
+    return this._session.connect_gateway(gateway, credential);
+  }
+
+  disconnect_gateway(gateway: string): Record<string, any> {
+    return this._session.disconnect_gateway(gateway);
+  }
+
   delete_key(backend: string): Record<string, any> {
     return this._session.delete_key(backend);
   }

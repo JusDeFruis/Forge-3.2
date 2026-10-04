@@ -177,6 +177,7 @@
       <nav class="tabs" role="tablist" aria-label="Settings sections">
         <button class="tab on" id="tabModels" type="button" role="tab" data-pane="paneModels" aria-selected="true" aria-controls="paneModels">Models</button>
         <button class="tab" id="tabKeys" type="button" role="tab" data-pane="paneKeys" aria-selected="false" aria-controls="paneKeys">API keys</button>
+        <button class="tab" id="tabGateways" type="button" role="tab" data-pane="paneGateways" aria-selected="false" aria-controls="paneGateways">Gateways</button>
         <button class="tab" id="tabParams" type="button" role="tab" data-pane="paneParams" aria-selected="false" aria-controls="paneParams">Parameters</button>
         <button class="tab" id="tabLook" type="button" role="tab" data-pane="paneLook" aria-selected="false" aria-controls="paneLook">Appearance</button>
         <button class="tab" id="tabPrompts" type="button" role="tab" data-pane="panePrompts" aria-selected="false" aria-controls="panePrompts">Prompts</button>
@@ -199,23 +200,46 @@
           </div>
           <label class="onlykeyed"><input type="checkbox" id="setOnlyKeyed"><span>Only providers with a key</span></label>
 
+          <div class="modellist tall" id="setModelList"></div>
+          <p class="note foot">Cheap floor, Kimi mid-tier including K3, and Grok 4.5 / 4.6 / 4.7.</p>
+        </section>
+
+        <section class="pane" id="paneGateways" role="tabpanel" aria-labelledby="tabGateways" hidden>
+          <div class="panehead">
+            <div>
+              <h3>Gateways</h3>
+              <p class="note">Things you already pay for, or are already signed into on this
+              machine. There is no key to paste: Forge connects to the subscription itself, so
+              what it can carry depends on the plan behind it.</p>
+            </div>
+          </div>
+
           <div class="gateways" id="setGateways">
             <div class="gthead">
-              <span class="gtitle">Gateways</span>
+              <span class="gtitle">Connected and not</span>
               <span class="gline" aria-hidden="true"></span>
-              <span class="gnote">things you already pay for or are already signed into</span>
+              <span class="gnote">the plan is read from the login</span>
             </div>
             <div id="setGatewayList"></div>
           </div>
 
-          <div class="gthead providershead">
-            <span class="gtitle">Providers</span>
-            <span class="gline" aria-hidden="true"></span>
-            <span class="gnote">API keys you paste</span>
-          </div>
-
-          <div class="modellist tall" id="setModelList"></div>
-          <p class="note foot">Cheap floor, Kimi mid-tier including K3, and Grok 4.5 / 4.6 / 4.7.</p>
+          <form class="gconnect" id="setGatewayForm" hidden>
+            <div class="gconnecthead">
+              <span class="gtitle">Connect manually</span>
+              <span class="gline" aria-hidden="true"></span>
+              <button class="pbtn ghost" id="gatewayCancel" type="button">Cancel</button>
+            </div>
+            <p class="note" id="gatewayHelp"></p>
+            <label class="gfield">
+              Credential
+              <textarea id="gatewaySecret" rows="7" spellcheck="false" autocomplete="off"
+                placeholder="paste the gateway credential here"></textarea>
+            </label>
+            <p class="note gerr" id="gatewayErr"></p>
+            <div class="gconnectacts">
+              <button class="pbtn" id="gatewaySave" type="submit">Connect</button>
+            </div>
+          </form>
         </section>
 
         <section class="pane" id="paneKeys" role="tabpanel" aria-labelledby="tabKeys" hidden>

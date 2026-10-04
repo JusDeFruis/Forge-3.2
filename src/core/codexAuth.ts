@@ -4,7 +4,8 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { httpRequest } from './httpTransport';
 import type { HttpResponse } from './httpTransport';
-import { restrictPrivateFile } from './secretFiles';
+import { restrictPrivateFile, writePrivateFile } from './secretFiles';
+import { forge_dir } from '../paths';
 
 export const _CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
 export const _TOKEN_URL = 'https://auth.openai.com/oauth/token';
@@ -89,7 +90,68 @@ export function available(): boolean {
   return Boolean(String(tokens['access_token'] || '').trim() || String(tokens['refresh_token'] || '').trim());
 }
 
+/** A gateway credential the reader pasted in, stored beside the keys. Used when
+    there is no `~/.codex/auth.json` on this machine — a second machine, a
+    colleague's login, a container — so the gateway is not limited to whatever
+    happened to be logged in locally. Owner-only, and never in config.json. */
+export function stored_path(): string {
+  return path.join(forge_dir(), 'keys', 'codex-gateway.json');
+}
+
+function _read_stored(): Record<string, any> | null {
+  try {
+    const raw = fs.readFileSync(stored_path(), 'utf8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function store_credential(raw: string): void {
+  const text = String(raw ?? '').trim();
+  if (!text) throw new CodexAuthError('the credential is empty');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new CodexAuthError('that is not valid JSON — paste the whole auth.json');
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new CodexAuthError('a gateway credential has to be a JSON object');
+  }
+  const bag = parsed as Record<string, any>;
+  const tokens = bag['tokens'];
+  const inner = tokens && typeof tokens === 'object' && !Array.isArray(tokens) ? tokens : {};
+  if (!String(inner['access_token'] ?? '').trim() && !String(inner['refresh_token'] ?? '').trim()) {
+    throw new CodexAuthError('no access or refresh token in there — this does not look like an auth.json');
+  }
+  if (!String(inner['account_id'] ?? '').trim()) {
+    throw new CodexAuthError('no account id in there — run `codex login` on the machine it came from');
+  }
+  writePrivateFile(stored_path(), text);
+}
+
+export function clear_stored(): void {
+  try {
+    fs.rmSync(stored_path(), { force: true });
+  } catch {
+    /* a credential that is already gone is the state we wanted */
+  }
+}
+
+/** the login already on this machine first, then the one the reader pasted */
 export function _read(): Record<string, any> {
+  const stored = _read_stored();
+  try {
+    return _read_local();
+  } catch (exc) {
+    if (stored) return stored;
+    throw exc;
+  }
+}
+
+export function _read_local(): Record<string, any> {
   const file = auth_path();
   let raw: string;
   try {

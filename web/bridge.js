@@ -54,7 +54,8 @@
     'create_project', 'remove_project', 'approve_tool', 'answer_ask_user', 'read_delivery',
   'read_delivery_bundle',
     'model_choices', 'pin_model', 'backend_catalog', 'update_config',
-    'save_key', 'delete_key', 'minimize', 'toggle_maximize', 'close', 'drag_by',
+    'save_key', 'delete_key', 'connect_gateway', 'disconnect_gateway',
+    'minimize', 'toggle_maximize', 'close', 'drag_by',
     'browse_workspace', 'pick_folder_native'
   ];
 
