@@ -2,6 +2,12 @@
 
 ## Forge 3.2
 
+- **nemotron-3.5-lightning is back.** It had been dropped as dead: it accepted
+  the request and then said nothing, and the 60s idle limit read that silence as
+  a hang. It was a queue, not a fault — and the queue is now waited out properly.
+  Re-probed four times in a row on 2026-10-03, every call answering, between
+  318ms and 16s depending on the depth. It is one of the free models people
+  arrive for, so it belongs in the cheap floor.
 - **Gateways: subscriptions are now their own category.** A provider is an API
   key you paste. A gateway is something you already pay for, or are already
   signed into on this machine, that Forge connects to as a bridge — there is no

@@ -61,6 +61,9 @@ export const CHEAP_BY_BACKEND: Record<string, string[]> = {
 "nvidia": [
     "nvidia/nemotron-3-ultra-550b-a55b",
     "nvidia/nemotron-3-super-120b-a12b",
+    /* back in the cheap floor with the catalogue: it answers, it is free, and
+       it is one of the models people arrive looking for */
+    "nvidia/nemotron-3.5-lightning-30b-a3b",
     "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
     "meta/muse-glimmer-30b",
     "moonshotai/kimi-k3",
@@ -139,7 +142,7 @@ export const CHEAP_CASCADE: Record<string, string[]> = {
   "deepseek": ["deepseek-flash"],
   "groq": ["openai/gpt-oss-120b", "openai/gpt-oss-20b"],
   "xai": ["grok-4.6"],
-  "nvidia": ["nvidia/nemotron-3-ultra-550b-a55b", "nvidia/nemotron-3-super-120b-a12b", "openai/gpt-oss-20b"],
+  "nvidia": ["nvidia/nemotron-3-ultra-550b-a55b", "nvidia/nemotron-3.5-lightning-30b-a3b", "openai/gpt-oss-20b"],
   "sambanova": ["DeepSeek-V3.2", "MiniMax-M3"],
   "huggingface": ["openai/gpt-oss-120b", "moonshotai/Kimi-K3"],
   "moonshot": ["kimi-k2.7-code"],

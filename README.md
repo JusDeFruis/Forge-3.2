@@ -28,6 +28,10 @@ Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
 
 ## What changed in 3.2
 
+- `nemotron-3.5-lightning` is available again on the free NVIDIA tier. It had
+  been written off as dead when it was really sitting in a queue that the 60s
+  limit called a hang; the queue is now waited out, and four probes in a row
+  answered between 318ms and 16s
 - Gateways have their own tab in Settings. A provider is a key you paste; a
   gateway is something you already pay for or are already signed into, so there
   is nothing to paste. Forge reads the plan from the local login — `free`,

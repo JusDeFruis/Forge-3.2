@@ -681,6 +681,10 @@ export const ZAI_MODELS: string[] = [
 export const NVIDIA_MODELS: string[] = [
   'nvidia/nemotron-3-ultra-550b-a55b',
   'nvidia/nemotron-3-super-120b-a12b',
+  /* was pulled when it looked dead: it had sat through a queue that the 60s
+     idle limit mistook for a hang. Re-probed 2026-10-03, four calls in a row,
+     all answering — 318ms to 16s depending on the queue. */
+  'nvidia/nemotron-3.5-lightning-30b-a3b',
   'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
   'meta/muse-glimmer-30b',
   'moonshotai/kimi-k3',
