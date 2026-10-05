@@ -610,6 +610,13 @@ export class Backend {
     if (this.dialect === 'codex') {
       return available() ? 'codex-login' : null;
     }
+    /* A gateway keeps its credential where its own app keeps it, not in the
+       keys folder: reading it from here is what stops the settings screen from
+       saying "connected" while every request fails for want of a key that was
+       never going to be there. */
+    if (this.name === 'opencode') {
+      return opencodeAuth.api_key() || null;
+    }
     const read_file = (pathname: string): string => {
       try {
         if (!fs.statSync(pathname).isFile()) return '';
@@ -2088,6 +2095,14 @@ export function open_client(backend: Backend, key?: string | null, verify = true
   }
   const resolved = key || backend.load_key();
   if (!resolved) {
+    /* the same message as a provider would give here sends the reader after a
+       key that does not exist for a gateway */
+    if (backend.gateway) {
+      const how = backend.name === 'opencode'
+        ? 'sign in to Zen in the OpenCode app, or connect it in Settings → Gateways'
+        : `connect it in Settings → Gateways`;
+      throw new Error(`${backend.name} is not connected — ${how}`);
+    }
     const env_keys = `[${backend.env_keys.map((name) => `'${name}'`).join(', ')}]`;
     throw new Error(`no key for backend '${backend.name}' — set one (${path.join(KEYS_DIRS[0], `${backend.name}.txt`)}) or via env ${env_keys}`);
   }

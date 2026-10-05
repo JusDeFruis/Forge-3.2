@@ -2,6 +2,13 @@
 
 ## Forge 3.2
 
+- **A gateway credential now reaches the request, not just the settings screen.**
+  The screen said "connected" because it read the credential where the app keeps
+  it, while the client went looking for a file in the keys folder — which a
+  gateway never has. So the gateway showed connected and every turn failed for
+  want of a key that was never going to appear. Both now read the same place,
+  and a gateway that genuinely is not connected is told to open Settings →
+  Gateways rather than being sent after a key that does not exist.
 - **A gateway model no longer asks for a key that cannot exist.** Clicking a
   free OpenCode model said "add a key in Settings", which is a dead end: a
   gateway has no key, it authenticates through a local login. Usability is now
