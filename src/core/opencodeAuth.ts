@@ -156,6 +156,22 @@ export function clear_stored(): void {
   }
 }
 
+/** Each Zen model is served on its own endpoint, and the free ones are not all
+    on the same one. This is the table from opencode.ai/docs/zen, copied rather
+    than guessed: sending `muse-spark-1.3-contributor-free` to /chat/completions
+    is a 403 whatever the credential, because that model is on /responses. An
+    unlisted model defaults to /chat/completions, which is what most of the
+    catalog uses. */
+export const ZEN_ENDPOINTS: Record<string, string> = {
+  'muse-spark-1.3-contributor-free': 'responses',
+  'muse-spark-1.2-contributor-free': 'responses',
+  'jev-1.13-free': 'systemone',
+};
+
+export function endpoint_for(model: string): string {
+  return ZEN_ENDPOINTS[String(model ?? '').trim()] ?? 'chat/completions';
+}
+
 /** Zen's free tier, read live. Nothing is frozen: the list is whatever the
     endpoint serves today, filtered by the provider's own `-free` suffix. */
 export async function catalog(): Promise<string[]> {
@@ -173,4 +189,106 @@ export async function catalog(): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+export interface ZenModelState {
+  /** the model this is about */
+  model: string;
+  /** the endpoint answered. Not a promise of a good answer — only that this
+      account may ask this question at all. */
+  ok: boolean;
+  /** why not, in the reader's words. Empty when ok. */
+  why: string;
+  endpoint: string;
+  checked: number;
+}
+
+const _probe: Map<string, ZenModelState> = new Map();
+
+/** Probe the free tier instead of believing it.
+
+    OpenCode publishes 13 free models and charges nothing for any of them on
+    paper, but its server answers only some of them for a third-party client —
+    measured 2026-10-03 with a real account key: `space-bunny-free` answered,
+    one is country-restricted, and the rest refused with "OpenCode's free tier
+    can only be used from within OpenCode" on their own documented endpoint.
+    Nothing in the catalogue distinguishes them.
+
+    So the list Forge offers is not the list that answers, and the only honest
+    way to tell them apart is to ask. Each model is probed on its own endpoint,
+    the answer is what the picker shows, and when OpenCode lifts a restriction
+    the next probe says so — no code change, no frozen list of guesses. */
+export async function probe_free_tier(models: readonly string[]): Promise<ZenModelState[]> {
+  const key = api_key();
+  const list = models.map((model) => String(model ?? '').trim()).filter(Boolean);
+  if (!key) {
+    return list.map((model) => ({
+      model,
+      ok: false,
+      why: 'not connected',
+      endpoint: endpoint_for(model),
+      checked: Date.now(),
+    }));
+  }
+  const found = new Map<string, ZenModelState>();
+  await Promise.all(list.map(async (model) => {
+    const endpoint = endpoint_for(model);
+    const state: ZenModelState = { model, ok: false, why: '', endpoint, checked: Date.now() };
+    found.set(model, state);
+    if (endpoint === 'systemone') {
+      /* Jev answers questions about a state, it is not a chat turn. Offering it
+         as a reply would be offering something that cannot reply. */
+      state.why = 'rates a state, it does not answer a chat turn';
+      return;
+    }
+    const body = endpoint === 'responses'
+      ? { model, input: 'ready', max_output_tokens: 4 }
+      : { model, messages: [{ role: 'user', content: 'ready' }], max_tokens: 4 };
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30000);
+      const res = await fetch(`${ZEN_BASE_URL}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        state.ok = true;
+      } else {
+        const detail = (await res.text()).replace(/\s+/g, ' ');
+        if (/within\s+opencode/i.test(detail)) {
+          state.why = 'OpenCode serves this one only from inside its own app';
+        } else if (/your country/i.test(detail)) {
+          state.why = 'not available in your country';
+        } else if (/Missing API key/i.test(detail)) {
+          state.why = 'the Zen credential was not accepted';
+        } else if (/access is disabled/i.test(detail)) {
+          state.why = 'disabled on this Zen workspace';
+        } else if (/Model is unavailable/i.test(detail)) {
+          state.why = 'listed as free, but not served right now';
+        } else if (/Endpoint is unavailable/i.test(detail)) {
+          state.why = 'its endpoint is down at OpenCode';
+        } else {
+          state.why = detail.slice(0, 90);
+        }
+      }
+    } catch (error) {
+      state.why = (error as Error)?.name === 'AbortError' ? 'no answer in 30s' : 'unreachable';
+    }
+  }));
+  const out = list.map((model) => found.get(model)).filter((s): s is ZenModelState => Boolean(s));
+  for (const state of out) _probe.set(state.model, state);
+  return out;
+}
+
+/** What the last probe said, without asking again. A model nobody has probed
+    yet is unknown, and unknown is not the same as broken — it stays offered. */
+export function probed_state(model: string): ZenModelState | null {
+  return _probe.get(String(model ?? '').trim()) ?? null;
+}
+
+export function any_probed(): boolean {
+  return _probe.size > 0;
 }

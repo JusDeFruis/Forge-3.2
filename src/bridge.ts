@@ -117,6 +117,23 @@ export class Api {
     return this._session.model_choices();
   }
 
+  /** Ask OpenCode which of its free models this account may actually use.
+
+      The catalogue says thirteen are free; the server answers for one. That is
+      not something Forge can know without asking, so it asks — in the
+      background, off the critical path, and the picker is repainted with the
+      answer when it lands. */
+  async probe_opencode(): Promise<Record<string, any>> {
+    const { BACKENDS } = await import('./core/providers');
+    const { probe_free_tier } = await import('./core/opencodeAuth');
+    const models = [...(BACKENDS['opencode']?.models ?? [])];
+    if (!models.length) return { ok: true, probed: 0 };
+    const states = await probe_free_tier(models);
+    const usable = states.filter((s) => s.ok).map((s) => s.model);
+    const refused = states.filter((s) => !s.ok).map((s) => ({ model: s.model, why: s.why }));
+    return { ok: true, probed: states.length, usable, refused, models: this._session.model_choices() };
+  }
+
   pin_model(backend: string, model: string): Record<string, any> {
     return this._session.pin_model('forge', backend, model);
   }

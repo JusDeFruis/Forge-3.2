@@ -122,6 +122,7 @@ interface ModelItem {
   model: string;
   traits?: string[];
   keyed: boolean;
+  note?: string;
   gateway?: boolean;
   search?: string;
 }
@@ -2037,12 +2038,52 @@ interface EventPayload {
     paintSessions();
   };
 
+  /* Ask OpenCode which of its free models this account may really use. Runs
+     once, after the window is up, because it is the provider's server that
+     decides — not Forge — and a picker that guesses is a picker that lies. */
+  let probedZen = false;
+  const probeZen = (): void => {
+    if (probedZen) return;
+    const api = bridge();
+    if (!api || typeof (api as any).probe_opencode !== 'function') return;
+    probedZen = true;
+    (api as any).probe_opencode().then((result: any) => {
+      if (!result || !result.ok || !Array.isArray(result.models)) return;
+      /* repaint from the freshly decided list, so a row that is refused now
+         says so instead of waiting to be found out at request time */
+      models = result.models as ModelItem[];
+      const settingsList = $el('setModelList');
+      if (settingsList) {
+        paintModelList(
+          settingsList,
+          ($el('setModelSearch') as HTMLInputElement).value.trim().toLowerCase(),
+          ($el('setOnlyKeyed') as HTMLInputElement).checked,
+          200,
+          undefined
+        );
+      }
+      if (!result.refused || !result.refused.length) return;
+      toast(result.usable.length
+        ? `OpenCode: ${result.usable.length} of ${result.probed} free models answer for this account`
+        : `OpenCode: none of its ${result.probed} free models answer for this account`);
+    }, () => { /* offline, or OpenCode unreachable: the picker keeps saying
+                  nothing rather than claiming a model is broken */ });
+  };
+  setTimeout(probeZen, 4000);
+
   /* ───────────────────────── model picker ───────────────────────── */
 
   let pop: HTMLElement | null = null;
 
   const pinModel = (item: ModelItem, after?: () => void) => {
     if (!bridge()) return;
+    if (item.note) {
+      /* Not "no key" — the credential is there and was accepted. The provider's
+         own server is what says no, so the honest thing is to say what it said
+         instead of sending the reader off to paste something they already have. */
+      toast(`${item.model} — ${item.note}`);
+      return;
+    }
     if (!item.keyed) {
       /* a gateway has no key to paste: asking for one there sends the reader
          looking for a file that does not exist. It needs connecting, not a
@@ -2089,6 +2130,13 @@ interface EventPayload {
       nokey.className = 'tag nokey';
       nokey.textContent = 'no key';
       row.appendChild(nokey);
+    }
+
+    if (item.note) {
+      const why = document.createElement('span');
+      why.className = 'tag nokey';
+      why.textContent = item.note;
+      row.appendChild(why);
     }
 
     if (current) {

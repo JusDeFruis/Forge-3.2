@@ -2,6 +2,19 @@
 
 ## Forge 3.2
 
+- **Forge asks OpenCode which of its free models actually answer, instead of
+  offering thirteen and letting you find out.** OpenCode publishes 13 free models
+  and, measured against a real account on 2026-10-03, its server answers one.
+  Ten refuse with "OpenCode's free tier can only be used from within OpenCode",
+  one is country-restricted, one is listed free but not served, one rates a
+  state rather than answering a chat turn. Nothing in the catalogue
+  distinguishes them, so the picker now asks the server once at startup and
+  shows what it said: *OpenCode serves this one only from inside its own app*.
+  It is not "no key" — the credential was accepted — and when OpenCode lifts a
+  restriction the next start says so with no code change.
+- **Each Zen model is asked on its own endpoint.** `muse-spark-1.3-contributor-free`
+  is documented on `/responses` and was being sent to `/chat/completions`,
+  which is a refusal whatever the credential.
 - **A gateway credential now reaches the request, not just the settings screen.**
   The screen said "connected" because it read the credential where the app keeps
   it, while the client went looking for a file in the keys folder — which a

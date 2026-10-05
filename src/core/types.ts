@@ -49,6 +49,10 @@ export interface ModelChoice {
   search: string;
   price_in: number;
   price_out: number;
+  /** the provider's own server was asked about this model and said no, in these
+      words. The row stays listed — the refusal may be lifted — but it does not
+      pretend to be usable while the server says otherwise. */
+  note?: string;
 }
 
 export interface SessionRow {
