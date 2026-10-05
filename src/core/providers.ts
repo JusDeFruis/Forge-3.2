@@ -8,6 +8,7 @@ import {
   session,
   plan as codex_plan,
 } from './codexAuth';
+import * as opencodeAuth from './opencodeAuth';
 import { httpRequest } from './httpTransport';
 import { restrictPrivateDir, writePrivateFile } from './secretFiles';
 import { OPENROUTER_MODELS, ORCAROUTER_MODELS, VENICE_MODELS, UNCENSORED_MODELS_BY_BACKEND, is_media_only_model } from './modelCatalogs';
@@ -837,6 +838,19 @@ codex: new Backend(
       blurb: 'your ChatGPT/Codex login · ~/.codex/auth.json · no key to paste',
     },
   ),
+  opencode: new Backend(
+    'opencode', opencodeAuth.ZEN_BASE_URL, 'space-bunny-free',
+    {
+      dialect: 'openai',
+      gateway: true,
+      /* only the free tier, and only what the endpoint serves today: Zen's
+         free models are the ones whose id ends in `-free`, and a frozen copy
+         would keep offering what OpenCode has retired. */
+      models: await opencodeAuth.catalog(),
+      cascade: ['space-bunny-free', 'nemotron-3-ultra-free', 'deepseek-v4-flash-free'],
+      blurb: 'the OpenCode app account · the free tier only · ~/.local/share/opencode/auth.json',
+    },
+  ),
   mistral: new Backend(
     'mistral', 'https://api.mistral.ai/v1', 'mistral-large-latest',
     {
@@ -1056,6 +1070,20 @@ export function format_provider_error(error: unknown, backend_name: string): str
     return `${label} ${reason}. ${key_action}`;
   }
   if (status === 402) return `${label} credits are depleted. Add provider credits, then retry.`;
+  if (raw.includes('free tier') || raw.includes('fre[eé]tier')) {
+    /* OpenCode restricts its free tier to its own app. Saying so plainly is
+       the only honest thing to say: retrying cannot get past it, and a bare
+       403 would look like a fault in Forge. */
+    if (backend_key === 'opencode') {
+      return 'OpenCode only serves its free tier from inside the OpenCode app. ' +
+        'This model answers there and nowhere else for now.';
+    }
+  }
+  if (raw.includes('within opencode') || raw.includes('from within')) {
+    return backend_key === 'opencode'
+      ? 'OpenCode only serves this model from inside the OpenCode app.'
+      : `${label} refused this request.`;
+  }
   if (status === 403) return `${label} denied access for this key or model. Check its provider permissions — NVIDIA also answers 403 when a free endpoint is briefly busy, so retrying is worth it.`;
   if (status === 404 || raw.includes('model not found')) return `${label} does not currently offer the selected model. Pin another model with Ctrl+M.`;
   if (status === 400) {
@@ -1922,33 +1950,89 @@ export interface GatewayStatus {
   blurb: string;
   /** plain words for why this gateway cannot work, or '' when it can */
   blocked: string;
+  /** true when the thing itself is on this machine, whether or not it is
+      signed in. "Not installed" and "installed but not signed in" are
+      different problems with different fixes. */
+  installed: boolean;
 }
 
 /** Which gateways are switched on, and what the local login actually allows.
     A gateway is never listed as working on the strength of a key the reader
     pasted: it works or it does not depending on a subscription that lives
     somewhere else, so the honest state is reported rather than assumed. */
+/** how to read one gateway's login, without this file knowing the details of
+    any of them */
+interface GatewayReader {
+  connected: boolean;
+  installed: boolean;
+  plan: string | null;
+  mode: string | null;
+  until: string | null;
+  not_connected: string;
+}
+
+const GATEWAY_READERS: Record<string, () => GatewayReader> = {
+  codex: () => {
+    const info = codex_plan();
+    return {
+      connected: available(),
+      installed: available(),
+      plan: info.plan,
+      mode: info.mode,
+      until: info.until,
+      not_connected: 'no ChatGPT login found — run \`codex login\` on this machine',
+    };
+  },
+  opencode: () => {
+    const connected = opencodeAuth.available();
+    return {
+      connected,
+      installed: opencodeAuth.installed(),
+      /* Zen publishes no tier and no pricing, so there is no plan to read.
+         "free tier" is not a guess about an account: it is what these ids are
+         called and all this gateway offers. */
+      plan: connected ? 'free tier' : null,
+      mode: 'account',
+      until: null,
+      not_connected: opencodeAuth.installed()
+        ? 'the OpenCode app is here but holds no Zen credential — sign in to Zen in it'
+        : 'no OpenCode account on this machine — install the app and sign in',
+    };
+  },
+};
+
+function gateway_reader(name: string): GatewayReader {
+  const read = GATEWAY_READERS[name];
+  if (read) return read();
+  return {
+    connected: false,
+    installed: false,
+    plan: null,
+    mode: null,
+    until: null,
+    not_connected: 'not connected',
+  };
+}
+
 export function gateway_status(selected: Record<string, string[]> | null | undefined): GatewayStatus[] {
   const out: GatewayStatus[] = [];
   for (const [name, backend] of Object.entries(BACKENDS)) {
     if (!backend.gateway) continue;
-    const info = backend.dialect === 'codex' ? codex_plan() : { plan: null, mode: null, until: null };
-    const connected = backend.dialect === 'codex' ? available() : false;
+    const info = gateway_reader(name);
+    const connected = info.connected;
     const offered = [...backend.models];
     const keep = selected && typeof selected === 'object' && Array.isArray(selected[name])
       ? selected[name].filter((model): model is string => typeof model === 'string' && offered.includes(model))
       : offered;
     let blocked = '';
     if (!connected) {
-      blocked = backend.dialect === 'codex'
-        ? 'no ChatGPT login found — run `codex login` on this machine'
-        : 'not connected';
+      blocked = info.not_connected;
     } else if (!keep.length) {
       blocked = 'every model is switched off for this gateway';
     }
     out.push({
       id: name,
-      label: name === 'codex' ? 'Codex (ChatGPT)' : name,
+      label: name === 'codex' ? 'Codex (ChatGPT)' : name === 'opencode' ? 'OpenCode Zen' : name,
       connected,
       plan: info.plan,
       mode: info.mode,
@@ -1957,6 +2041,7 @@ export function gateway_status(selected: Record<string, string[]> | null | undef
       selected: keep.length ? keep : offered,
       blurb: backend.blurb,
       blocked,
+      installed: info.installed,
     });
   }
   return out;

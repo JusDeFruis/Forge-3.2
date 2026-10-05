@@ -2363,18 +2363,24 @@ interface EventPayload {
     ($el('gatewayErr') as HTMLElement).textContent = message;
   };
 
+  const gatewayHelp = (id: string): string => (id === 'opencode'
+    ? 'Paste the Zen key from the OpenCode app, or its whole auth.json. Checked ' +
+      'before anything is written, kept owner-only in the keys folder, and never in ' +
+      'the config. The app already installed here is preferred. Only the free tier is ' +
+      'listed — Zen names those with a -free suffix, read live so nothing goes stale.'
+    : 'Paste the auth.json that `codex login` wrote on the machine that has the ' +
+      'subscription. It is checked before anything is written, kept owner-only in the ' +
+      'keys folder, and never in the config. On this machine the existing login is ' +
+      'still preferred.');
+
   const openGatewayForm = (id: string) => {
     gatewayTarget = id;
-    const item = gatewayList().find((g) => g.id === id);
     gatewayAnswer('');
-    ($el('gatewayHelp') as HTMLElement).textContent = item && item.id === 'codex'
-      ? 'Paste the auth.json that `codex login` wrote on the machine that has the ' +
-        'subscription. It is checked before anything is written, kept owner-only in the ' +
-        'keys folder, and never in the config. On this machine the existing login is ' +
-        'still preferred.'
-      : 'Paste the credential this gateway needs.';
+    ($el('gatewayHelp') as HTMLElement).textContent = gatewayHelp(id);
+    ($el('gatewaySecret') as HTMLTextAreaElement).placeholder = id === 'opencode'
+      ? 'paste the Zen key here'
+      : 'paste the auth.json here';
     ($el('gatewaySecret') as HTMLTextAreaElement).value = '';
-    ($el('gatewayErr') as HTMLElement).textContent = '';
     $el('setGatewayForm').hidden = false;
     ($el('gatewaySecret') as HTMLTextAreaElement).focus();
   };

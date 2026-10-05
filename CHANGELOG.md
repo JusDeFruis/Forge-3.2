@@ -2,6 +2,17 @@
 
 ## Forge 3.2
 
+- **OpenCode Zen joins the gateways**, offering its free tier and nothing else.
+  Zen's catalogue carries no pricing at all, so which models are free is not
+  something to hard-code; what it does carry is a naming convention — every free
+  model ends in `-free` — so the list is read live and filtered by that. A model
+  OpenCode retires disappears on its own, and one it adds free shows up by
+  itself. The credential is read from the OpenCode app already on the machine,
+  or pasted when there is none, checked and kept owner-only in the keys folder.
+- **Its one refusal is named instead of hidden.** OpenCode serves its free tier
+  from inside its own app only. That is stated plainly when a call is refused,
+  because retrying cannot get past it and a bare 403 reads like a fault in
+  Forge. It is their policy to change, not ours to work around.
 - **nemotron-3.5-lightning is back.** It had been dropped as dead: it accepted
   the request and then said nothing, and the 60s idle limit read that silence as
   a hang. It was a queue, not a fault — and the queue is now waited out properly.

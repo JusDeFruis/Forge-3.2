@@ -13,6 +13,7 @@ import type {
 } from './core/anvil';
 import * as config from './core/config';
 import * as codexAuth from './core/codexAuth';
+import * as opencodeAuth from './core/opencodeAuth';
 import * as drafter from './core/drafter';
 import * as hold from './core/hold';
 import * as transport from './core/httpTransport';
@@ -1675,17 +1676,25 @@ export class ForgeSessionBase {
     if (!backend || !backend.gateway) {
       return { ok: false, error: 'that is not a gateway' };
     }
-    if (backend.dialect !== 'codex') {
+    if (backend.dialect !== 'codex' && name !== 'opencode') {
       return { ok: false, error: `${name} has no manual connection yet` };
     }
     try {
-      codexAuth.store_credential(credential);
+      if (backend.dialect === 'codex') {
+        codexAuth.store_credential(credential);
+      } else {
+        opencodeAuth.store_credential(credential);
+      }
     } catch (error) {
       return { ok: false, error: _exc_msg(error) };
     }
-    if (!codexAuth.available()) {
+    if (backend.dialect === 'codex' && !codexAuth.available()) {
       codexAuth.clear_stored();
       return { ok: false, error: 'that credential does not carry a usable token' };
+    }
+    if (name === 'opencode' && !opencodeAuth.available()) {
+      opencodeAuth.clear_stored();
+      return { ok: false, error: 'that credential was not accepted' };
     }
     const state = this.get_state();
     this._emit('state', null, { state });
@@ -1700,6 +1709,8 @@ export class ForgeSessionBase {
     }
     if (backend.dialect === 'codex') {
       codexAuth.clear_stored();
+    } else if (name === 'opencode') {
+      opencodeAuth.clear_stored();
     }
     const state = this.get_state();
     this._emit('state', null, { state });
