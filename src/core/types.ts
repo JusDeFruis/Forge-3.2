@@ -37,7 +37,12 @@ export interface ModelChoice {
   backend: string;
   model: string;
   tag: 'free' | 'paid';
+  /** whether this row can actually be used right now. For a provider that
+      means a key is stored; for a gateway it means the local login is there,
+      because there is no key to store. */
   keyed: boolean;
+  /** a gateway reaches its models through a subscription, not a key */
+  gateway?: boolean;
   is_default: boolean;
   label: string;
   traits: string[];

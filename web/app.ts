@@ -122,6 +122,7 @@ interface ModelItem {
   model: string;
   traits?: string[];
   keyed: boolean;
+  gateway?: boolean;
   search?: string;
 }
 
@@ -2043,7 +2044,12 @@ interface EventPayload {
   const pinModel = (item: ModelItem, after?: () => void) => {
     if (!bridge()) return;
     if (!item.keyed) {
-      toast('no key for ' + item.backend + ' — add one in Settings');
+      /* a gateway has no key to paste: asking for one there sends the reader
+         looking for a file that does not exist. It needs connecting, not a
+         credential. */
+      toast(item.gateway
+        ? `${item.backend} is not connected — connect it in Settings → Gateways`
+        : `no key for ${item.backend} — add one in Settings`);
       return;
     }
     const api = bridge();

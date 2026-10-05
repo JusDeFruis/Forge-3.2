@@ -2,6 +2,13 @@
 
 ## Forge 3.2
 
+- **A gateway model no longer asks for a key that cannot exist.** Clicking a
+  free OpenCode model said "add a key in Settings", which is a dead end: a
+  gateway has no key, it authenticates through a local login. Usability is now
+  decided the right way for each kind — a login for a gateway, a stored key for
+  a provider — and a gateway that is genuinely not connected is told to open
+  Settings → Gateways instead of sending the reader after a file that will
+  never be there.
 - **OpenCode Zen joins the gateways**, offering its free tier and nothing else.
   Zen's catalogue carries no pricing at all, so which models are free is not
   something to hard-code; what it does carry is a naming convention — every free

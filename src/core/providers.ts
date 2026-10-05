@@ -1153,7 +1153,11 @@ export function is_permanent_provider_error(error: unknown): boolean {
 export function model_choices(overlays?: Record<string, string[]> | null): ModelChoice[] {
   const out: ModelChoice[] = [];
   for (const [name, be] of Object.entries(BACKENDS)) {
-    const keyed = be.has_key();
+    /* A gateway has no key to hold — it reaches its models through a
+       subscription and a local login. Demanding a key there was telling the
+       reader to go and paste something that does not exist, so what decides
+       usability is the login being present, not a file in the keys folder. */
+    const keyed = be.gateway ? gateway_reader(name).connected : be.has_key();
     const extra = overlays && !Array.isArray(overlays) ? (overlays[name] ?? []) : [];
     const seen = new Set<string>();
     let catalog: string[] = [];
@@ -1171,6 +1175,7 @@ export function model_choices(overlays?: Record<string, string[]> | null): Model
         model,
         tag: be.tag,
         keyed,
+        gateway: be.gateway || undefined,
         is_default: model === be.default_model,
         label: `${name} · ${model}`,
         traits,
