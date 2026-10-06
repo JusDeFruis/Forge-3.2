@@ -2046,7 +2046,7 @@ interface EventPayload {
     const api = bridge();
     if (!api || typeof (api as any).probe_opencode !== 'function') return;
     probedZen = true;
-    (api as any).probe_opencode().then((result: any) => {
+    void (api as any).probe_opencode().then((result: any) => {
       if (!result || !result.ok || !Array.isArray(result.models)) return;
       if (result.state) applyState(result.state);
       /* repaint from the usable list, so refused models disappear instead of

@@ -40,7 +40,12 @@ export class Api {
   }
 
   async bootstrap(): Promise<Record<string, any>> {
+    /* The probe runs here, before the first model list leaves for the page, so
+       the picker is built from usable models instead of showing everything and
+       relying on a later repaint. Short budget: this is on the startup path,
+       and a slow provider must not hold the window closed. */
     await P.ensure_opencode_catalog();
+    await this.probe_opencode();
     return {
       state: this._session.get_state(),
       models: this._session.model_choices(),
@@ -130,7 +135,7 @@ export class Api {
     const { probe_free_tier } = await import('./core/opencodeAuth');
     const models = [...(P.BACKENDS['opencode']?.models ?? [])];
     if (!models.length) return { ok: true, probed: 0 };
-    const states = await probe_free_tier(models);
+    const states = await probe_free_tier(models, 8000);
     const usable = states.filter((s) => s.ok).map((s) => s.model);
     const repin = this._session.repin_refused_opencode_model();
     return {

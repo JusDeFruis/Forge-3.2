@@ -5,6 +5,12 @@
 - **The Windows executable builds again.** The live OpenCode catalogue no longer
   blocks provider construction with top-level await, which the SEA/CJS bundle
   cannot compile; bootstrap waits for the catalogue before returning models.
+- **The picker is now filtered from the very first list.** The probe used to run
+  after the model list had already reached the window, so all thirteen OpenCode
+  models were visible until a later repaint. Bootstrap now waits for the probe,
+  with a short budget so a slow provider cannot hold startup closed. A probe
+  that times out is recorded as unanswered rather than refused, so our own
+  silence never hides a model.
 - **Space Bunny is now treated as a reasoning model.** It streams real
   `reasoning_content`, so Forge no longer says it has no thinking and now gives
   it a normal reasoning budget; the request shape was checked live against Zen.

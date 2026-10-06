@@ -198,6 +198,9 @@ export interface ZenModelState {
   ok: boolean;
   /** why not, in the reader's words. Empty when ok. */
   why: string;
+  /** true when we never got an answer. That is our silence, not the provider's
+      refusal, so it must not remove the model from the picker. */
+  unanswered?: boolean;
   endpoint: string;
   checked: number;
 }
@@ -217,7 +220,10 @@ const _probe: Map<string, ZenModelState> = new Map();
     way to tell them apart is to ask. Each model is probed on its own endpoint;
     refused models are hidden, and when OpenCode lifts a restriction the next
     probe shows the model again — no code change, no frozen list of guesses. */
-export async function probe_free_tier(models: readonly string[]): Promise<ZenModelState[]> {
+export async function probe_free_tier(
+  models: readonly string[],
+  budget_ms = 30000,
+): Promise<ZenModelState[]> {
   const key = api_key();
   const list = models.map((model) => String(model ?? '').trim()).filter(Boolean);
   if (!key) {
@@ -245,7 +251,7 @@ export async function probe_free_tier(models: readonly string[]): Promise<ZenMod
       : { model, messages: [{ role: 'user', content: 'ready' }], max_tokens: 4 };
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 30000);
+      const timer = setTimeout(() => controller.abort(), Math.max(2000, budget_ms));
       const res = await fetch(`${ZEN_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
@@ -274,7 +280,12 @@ export async function probe_free_tier(models: readonly string[]): Promise<ZenMod
         }
       }
     } catch (error) {
-      state.why = (error as Error)?.name === 'AbortError' ? 'no answer in 30s' : 'unreachable';
+      /* An unanswered probe is not a refusal: the model stays offered, because
+         hiding it on a timeout would blame the provider for our own budget. */
+      state.why = (error as Error)?.name === 'AbortError'
+        ? `no answer in ${Math.round(Math.max(2000, budget_ms) / 1000)}s`
+        : 'unreachable';
+      state.unanswered = true;
     }
   }));
   const out = list.map((model) => found.get(model)).filter((s): s is ZenModelState => Boolean(s));
@@ -293,7 +304,7 @@ export function probed_state(model: string): ZenModelState | null {
     request OpenCode has already said it will not answer. */
 export function is_refused(model: string): boolean {
   const state = probed_state(model);
-  return Boolean(state && !state.ok);
+  return Boolean(state && !state.ok && !state.unanswered);
 }
 
 export function any_probed(): boolean {
