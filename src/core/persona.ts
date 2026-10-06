@@ -1,4 +1,4 @@
-import { reveal } from './sealedPrompts';
+import { reveal } from './prompts/sealedPrompts';
 import * as vault from './vault';
 import type { PromptSource } from './vault';
 import type { ChatMessage } from './types';

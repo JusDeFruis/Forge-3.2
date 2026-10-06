@@ -7,11 +7,11 @@ import {
   available,
   session,
   plan as codex_plan,
-} from './codexAuth';
-import * as opencodeAuth from './opencodeAuth';
+} from './auth/codexAuth';
+import * as opencodeAuth from './auth/opencodeAuth';
 import { httpRequest } from './httpTransport';
 import { restrictPrivateDir, writePrivateFile } from './secretFiles';
-import { OPENROUTER_MODELS, ORCAROUTER_MODELS, VENICE_MODELS, UNCENSORED_MODELS_BY_BACKEND, is_media_only_model } from './modelCatalogs';
+import { OPENROUTER_MODELS, ORCAROUTER_MODELS, VENICE_MODELS, UNCENSORED_MODELS_BY_BACKEND, is_media_only_model } from './models/modelCatalogs';
 import { forge_dir } from '../paths';
 import type { ForgeConfig, ChatMessage, Usage, ModelChoice, ToolCall, ToolDef } from './types';
 

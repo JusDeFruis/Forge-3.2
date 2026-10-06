@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { writePrivateFile } from './secretFiles';
-import { forge_dir } from '../paths';
+import { writePrivateFile } from '../secretFiles';
+import { forge_dir } from '../../paths';
 
 /** OpenCode Zen is the gateway behind the OpenCode app: the models it lists are
     served under the account you are already signed in to, so there is nothing

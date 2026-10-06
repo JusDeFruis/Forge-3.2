@@ -1,5 +1,5 @@
-import { reveal } from './core/sealedPrompts';
-import { OPENROUTER_MODELS, ORCAROUTER_MODELS, VENICE_MODELS } from './core/modelCatalogs';
+import { reveal } from './core/prompts/sealedPrompts';
+import { OPENROUTER_MODELS, ORCAROUTER_MODELS, VENICE_MODELS } from './core/models/modelCatalogs';
 import * as vault from './core/vault';
 import { extract_block as _extract_block } from './core/drafter';
 

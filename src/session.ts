@@ -12,8 +12,8 @@ import type {
   Judge as AnvilJudge,
 } from './core/anvil';
 import * as config from './core/config';
-import * as codexAuth from './core/codexAuth';
-import * as opencodeAuth from './core/opencodeAuth';
+import * as codexAuth from './core/auth/codexAuth';
+import * as opencodeAuth from './core/auth/opencodeAuth';
 import * as drafter from './core/drafter';
 import * as hold from './core/hold';
 import * as transport from './core/httpTransport';

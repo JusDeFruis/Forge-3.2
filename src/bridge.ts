@@ -157,7 +157,7 @@ export class Api {
       so an impossible choice does not stay pinned. */
   async probe_opencode(): Promise<Record<string, any>> {
     await P.ensure_opencode_catalog();
-    const { probe_free_tier } = await import('./core/opencodeAuth');
+    const { probe_free_tier } = await import('./core/auth/opencodeAuth');
     const models = [...(P.BACKENDS['opencode']?.models ?? [])];
     if (!models.length) return { ok: true, probed: 0 };
     const states = await probe_free_tier(models, 8000);

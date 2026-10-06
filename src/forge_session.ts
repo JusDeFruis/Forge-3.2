@@ -5,7 +5,7 @@ import { agent_enabled, run_agent_turn, workspace_error, type AgentResult, type 
 import { zip_directory } from './agent/workspace';
 import * as hold from './core/hold';
 import { cascade_for, cheap_choices, remap_pin } from './cheap';
-import * as codexAuth from './core/codexAuth';
+import * as codexAuth from './core/auth/codexAuth';
 import { tls_verify } from './core/config';
 import * as drafter from './core/drafter';
 import * as P from './core/providers';

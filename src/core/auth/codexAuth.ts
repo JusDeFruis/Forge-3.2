@@ -2,10 +2,10 @@ import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { httpRequest } from './httpTransport';
-import type { HttpResponse } from './httpTransport';
-import { restrictPrivateFile, writePrivateFile } from './secretFiles';
-import { forge_dir } from '../paths';
+import { httpRequest } from '../httpTransport';
+import type { HttpResponse } from '../httpTransport';
+import { restrictPrivateFile, writePrivateFile } from '../secretFiles';
+import { forge_dir } from '../../paths';
 
 export const _CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
 export const _TOKEN_URL = 'https://auth.openai.com/oauth/token';
