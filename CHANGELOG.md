@@ -2,6 +2,9 @@
 
 ## Forge 3.2
 
+- **The Windows executable builds again.** The live OpenCode catalogue no longer
+  blocks provider construction with top-level await, which the SEA/CJS bundle
+  cannot compile; bootstrap waits for the catalogue before returning models.
 - **Space Bunny is now treated as a reasoning model.** It streams real
   `reasoning_content`, so Forge no longer says it has no thinking and now gives
   it a normal reasoning budget; the request shape was checked live against Zen.

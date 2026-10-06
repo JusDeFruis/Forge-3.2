@@ -7,6 +7,7 @@ import type { BrowserWindow, Webview } from '@webviewjs/webview';
 
 import { expand_home } from './agent/workspace';
 import { Forge3Session } from './forge_session';
+import * as P from './core/providers';
 import { drawer_label } from './paths';
 
 export type EventSink = (event: string, payload: Record<string, any>) => void;
@@ -38,7 +39,8 @@ export class Api {
     }
   }
 
-  bootstrap(): Record<string, any> {
+  async bootstrap(): Promise<Record<string, any>> {
+    await P.ensure_opencode_catalog();
     return {
       state: this._session.get_state(),
       models: this._session.model_choices(),
@@ -124,9 +126,9 @@ export class Api {
       the new picker, and moves a draft off a model that has just been refused
       so an impossible choice does not stay pinned. */
   async probe_opencode(): Promise<Record<string, any>> {
-    const { BACKENDS } = await import('./core/providers');
+    await P.ensure_opencode_catalog();
     const { probe_free_tier } = await import('./core/opencodeAuth');
-    const models = [...(BACKENDS['opencode']?.models ?? [])];
+    const models = [...(P.BACKENDS['opencode']?.models ?? [])];
     if (!models.length) return { ok: true, probed: 0 };
     const states = await probe_free_tier(models);
     const usable = states.filter((s) => s.ok).map((s) => s.model);

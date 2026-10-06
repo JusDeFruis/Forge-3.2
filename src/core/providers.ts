@@ -850,10 +850,10 @@ codex: new Backend(
     {
       dialect: 'openai',
       gateway: true,
-      /* only the free tier, and only what the endpoint serves today: Zen's
-         free models are the ones whose id ends in `-free`, and a frozen copy
-         would keep offering what OpenCode has retired. */
-      models: await opencodeAuth.catalog(),
+      /* The live list arrives asynchronously below. Until then the cascade
+         keeps the gateway usable; Node's SEA/CJS bundle cannot use top-level
+         await, so construction never blocks on the network. */
+      models: [],
       cascade: ['space-bunny-free', 'nemotron-3-ultra-free', 'deepseek-v4-flash-free'],
       blurb: 'the OpenCode app account · the free tier only · ~/.local/share/opencode/auth.json',
     },
@@ -951,6 +951,20 @@ codex: new Backend(
     },
   ),
 };
+
+const OPENCODE_CATALOG_READY: Promise<void> = opencodeAuth.catalog().then((models) => {
+  /* Only the free tier, and only what the endpoint serves today: Zen's free
+     models are the ones whose id ends in `-free`, and a frozen copy would keep
+     offering what OpenCode has retired. An empty answer keeps the cascade
+     fallback rather than emptying the gateway while offline. */
+  if (models.length) BACKENDS['opencode'].models = [...models];
+}).catch(() => {
+  /* catalog() already swallows network failures; this only guards the update */
+});
+
+export async function ensure_opencode_catalog(): Promise<void> {
+  await OPENCODE_CATALOG_READY;
+}
 
 export const DEFAULT_BACKEND = 'openrouter';
 
