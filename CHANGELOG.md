@@ -11,6 +11,15 @@
   with a short budget so a slow provider cannot hold startup closed. A probe
   that times out is recorded as unanswered rather than refused, so our own
   silence never hides a model.
+- **Long shell commands are no longer cut off at 60 seconds.** Two separate bugs
+  made builds impossible. The timeout was a fixed wall clock, so `npm install` or
+  `tsc` was killed mid-write; it now measures *silence*, and every line of
+  output re-arms the watchdog, so a command that keeps printing runs to the end
+  however long it takes. Separately, a command whose output passed the reply cap
+  was killed outright, which is why a chatty build died while working fine; the
+  reply is now capped and the command runs on. The window is 5 minutes of
+  silence by default and settable in seconds. A stopped command now says it was
+  the silence, not a fault.
 - **The agent no longer re-reads the whole workspace every turn.** Tool results
   lived only inside one agent turn and were discarded when it ended, so each new
   message started blind and listed and read everything again. Each turn now

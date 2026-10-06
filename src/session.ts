@@ -1498,6 +1498,7 @@ export class ForgeSessionBase {
       'anvil_probe_count',
       'anvil_max_versions',
       'anvil_threshold',
+      'agent_shell_timeout',
       'hold',
       'hold_max',
       'chat_fallback',

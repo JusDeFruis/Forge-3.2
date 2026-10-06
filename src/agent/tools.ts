@@ -2,8 +2,19 @@ import type { ForgeConfig, ToolDef } from '../core/types';
 import { httpRequest } from '../core/httpTransport';
 
 import { Workspace } from './workspace';
-import { run_command } from './shell';
+import { run_command, SHELL_SILENCE_MS } from './shell';
 import { fetch_page } from './webfetch';
+
+/** How long a command may stay silent before the agent gives up on it.
+    Settable, because a cold native build is legitimately quiet for minutes and
+    a fixed wall-clock limit killed those part-way through writing. */
+export function shell_timeout(config: Record<string, any> | null | undefined): number {
+  const raw = Number((config || {})['agent_shell_timeout'] ?? 0);
+  if (!Number.isFinite(raw) || raw <= 0) return SHELL_SILENCE_MS;
+  /* always seconds, like every other duration in this app */
+  const ms = Math.trunc(raw * 1000);
+  return Math.min(1800000, Math.max(10000, ms));
+}
 
 export interface AgentContext {
   workspace: Workspace;
@@ -87,7 +98,10 @@ const FS_TOOLS: ToolDef[] = [
 const SHELL_TOOL: ToolDef = {
   name: 'run_command',
   description:
-    'Run a shell command inside the workspace folder (Windows). stdout and stderr are returned, truncated when long. The command is killed after 60 seconds.',
+    'Run a shell command inside the workspace folder (Windows). stdout and stderr are returned. ' +
+    'A command that keeps printing is never cut off, however long it runs: only one that stays silent ' +
+    'for 5 minutes is stopped as hung. Long output is truncated but the command still runs to the end. ' +
+    'For a build that takes longer than that, start it in the background and poll its log.',
   parameters: {
     type: 'object',
     properties: {
@@ -335,15 +349,25 @@ export async function run_tool(name: string, raw_args: unknown, ctx: AgentContex
         const result = await run_command(command, {
           cwd: ctx.workspace.root,
           shell: str(args['shell']) || 'powershell',
+          timeout_ms: shell_timeout(ctx.config),
           signal: ctx.signal,
         });
-        const head = `exit ${result.code ?? '?'} · ${(result.duration_ms / 1000).toFixed(1)}s${result.timed_out ? ' · timed out' : ''}${
-          result.truncated ? ' · truncated' : ''
-        }`;
+        const head = `exit ${result.code ?? '?'} · ${(result.duration_ms / 1000).toFixed(1)}s${
+          result.timed_out ? ' · stopped after going silent' : ''
+        }${result.truncated ? ' · output truncated' : ''}`;
         const parts = [head];
         if (result.stdout.trim()) parts.push(`stdout:\n${result.stdout.trim()}`);
         if (result.stderr.trim()) parts.push(`stderr:\n${result.stderr.trim()}`);
-        if (!result.stdout.trim() && !result.stderr.trim()) parts.push('(no output)');
+        if (!result.stdout.trim() && !result.stderr.trim()) {
+          parts.push('(no output)');
+          /* silence that lasted the whole window is what a hung build looks
+             like, and the model needs to be told rather than left guessing */
+          if (!result.timed_out) {
+            parts.push(
+              `the command finished quietly after ${Math.round(result.duration_ms / 1000)}s`,
+            );
+          }
+        }
         return cap(parts.join('\n'));
       }
       case 'web_fetch': {

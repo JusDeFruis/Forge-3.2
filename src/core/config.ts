@@ -52,6 +52,9 @@ export const _DEFAULTS: ForgeConfig = {
   'agent_enabled': false,
   'agent_shell': false,
   'agent_web': false,
+  /* seconds a command may stay silent before it is called hung. 0 means the
+     default 300s; the old fixed 60s wall clock cut builds off mid-write. */
+  'agent_shell_timeout': 0,
   'projects': [],
   /* the user's own instructions, injected in front of every turn when on */
   'custom_prompt_on': false,
