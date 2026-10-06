@@ -365,21 +365,27 @@ export class Forge3Session extends ForgeSessionBase {
       folder: the tool results live only inside one agent turn and are thrown
       away when it ends. Kept per folder so switching projects never carries
       one folder's facts into another's. */
-  _workspace_known = new Map<string, WorkspaceObservation[]>();
+  /* Created eagerly, not as a field initialiser: the parent constructor loads
+     the saved chat, which changes the folder and calls the hook below, and a
+     field initialiser has not run yet at that point. The launch crashed on
+     `undefined.delete` for exactly that reason. */
+  _workspace_known: Map<string, WorkspaceObservation[]> = new Map();
 
   _known_for(folder: string): WorkspaceObservation[] {
     const key = String(folder ?? '').trim().toLowerCase();
-    return key ? this._workspace_known.get(key) ?? [] : [];
+    if (!key || !this._workspace_known) return [];
+    return this._workspace_known.get(key) ?? [];
   }
 
   _remember_known(folder: string, notes: readonly WorkspaceObservation[] | undefined): void {
     const key = String(folder ?? '').trim().toLowerCase();
-    if (!key || !notes || !notes.length) return;
+    if (!key || !this._workspace_known || !notes || !notes.length) return;
     this._workspace_known.set(key, [...notes]);
   }
 
   /** a new chat, or a different folder, starts from a clean slate */
   _forget_known(folder?: string): void {
+    if (!this._workspace_known) return;
     if (folder === undefined) {
       this._workspace_known.clear();
       return;
@@ -390,8 +396,8 @@ export class Forge3Session extends ForgeSessionBase {
   /* Moving to another folder must not carry the previous folder's facts across:
      the model would then "know" files it never opened here. */
   override _on_workspace_changed(previous: string, next: string): void {
-    this._forget_known(previous);
     void next;
+    this._forget_known(previous);
   }
 
   override _reset_plain_chat(): void {
