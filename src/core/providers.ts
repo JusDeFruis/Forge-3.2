@@ -1175,13 +1175,11 @@ export function model_choices(overlays?: Record<string, string[]> | null): Model
     }
     catalog = catalog.filter((model) => !is_media_only_model(model));
     for (const model of catalog) {
+      /* A probed refusal is not offered at all. Unknown models stay visible;
+         only a server verdict removes a row. */
+      if (name === 'opencode' && opencodeAuth.is_refused(model)) continue;
       const uncensored = UNCENSORED_MODELS_BY_BACKEND[name];
       const traits: string[] = uncensored && uncensored.has(model) ? ['uncensored'] : [];
-      /* Asked of the provider, not assumed: a gateway that is signed in can
-         still have some of its models refused, and a row that says it can be
-         used while the server says otherwise is the row that wastes the
-         reader's afternoon. */
-      const note = name === 'opencode' ? opencodeAuth.probed_state(model)?.why ?? '' : '';
       out.push({
         backend: name,
         model,
@@ -1191,10 +1189,9 @@ export function model_choices(overlays?: Record<string, string[]> | null): Model
         is_default: model === be.default_model,
         label: `${name} · ${model}`,
         traits,
-        search: `${name} ${model} ${traits.join(' ')} ${note}`.toLowerCase(),
+        search: `${name} ${model} ${traits.join(' ')}`.toLowerCase(),
         price_in: price_for(model)[0],
         price_out: price_for(model)[1],
-        ...(note ? { note } : {}),
       });
     }
   }
@@ -1972,9 +1969,6 @@ export interface GatewayStatus {
       signed in. "Not installed" and "installed but not signed in" are
       different problems with different fixes. */
   installed: boolean;
-  /** model id -> what the provider's own server said when asked, for the ones
-      it refused. Empty when nothing has been refused. */
-  model_notes?: Record<string, string>;
 }
 
 /** Which gateways are switched on, and what the local login actually allows.
@@ -2041,7 +2035,12 @@ export function gateway_status(selected: Record<string, string[]> | null | undef
     if (!backend.gateway) continue;
     const info = gateway_reader(name);
     const connected = info.connected;
-    const offered = [...backend.models];
+    /* The picker and the gateway switches agree: a probed OpenCode refusal is
+       not offered anywhere. A stored switch is kept, so if the server allows
+       the model later it returns with the reader's choice intact. */
+    const offered = backend.models.filter(
+      (model) => !(name === 'opencode' && opencodeAuth.is_refused(model)),
+    );
     const keep = selected && typeof selected === 'object' && Array.isArray(selected[name])
       ? selected[name].filter((model): model is string => typeof model === 'string' && offered.includes(model))
       : offered;
@@ -2049,18 +2048,10 @@ let blocked = '';
     if (!connected) {
       blocked = info.not_connected;
     } else if (!keep.length) {
-      blocked = 'every model is switched off for this gateway';
-    }
-    /* What the provider's own server said when Forge asked it, per model. A
-       model it refuses is still listed — it may be lifted tomorrow, and hiding
-       it would hide that too — but the picker says so rather than letting the
-       reader pick it and meet the same refusal a second time. */
-    const model_notes: Record<string, string> = {};
-    if (name === 'opencode') {
-      for (const model of offered) {
-        const state = opencodeAuth.probed_state(model);
-        if (state && !state.ok && state.why) model_notes[model] = state.why;
-      }
+      blocked =
+        name === 'opencode' && backend.models.length && !offered.length
+          ? 'no usable OpenCode free model right now'
+          : 'every model is switched off for this gateway';
     }
     out.push({
       id: name,
@@ -2074,7 +2065,6 @@ let blocked = '';
 blurb: backend.blurb,
       blocked,
       installed: info.installed,
-      model_notes,
     });
   }
   return out;

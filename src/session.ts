@@ -1445,6 +1445,42 @@ export class ForgeSessionBase {
     return { ok: true, state };
   }
 
+  /** After the OpenCode probe, a draft can point at a model the server has
+      just refused. Leaving it pinned would keep an impossible choice selected,
+      so move it to the first usable OpenCode model — or, when none answered,
+      back to the configured default provider. */
+  repin_refused_opencode_model(): Record<string, any> {
+    const backend = String(this._cfg['draft_backend'] || '');
+    const model = String(this._cfg['draft_model'] || '');
+    if (backend !== 'opencode' || !opencodeAuth.is_refused(model)) {
+      return { ok: true, repinned: false, state: this.get_state() };
+    }
+    if (P.BACKENDS['opencode']?.has_key()) {
+      const usable = P.model_choices().find((choice) => choice.backend === 'opencode');
+      if (usable) {
+        const result = this.pin_model('forge', 'opencode', usable.model);
+        return {
+          ...result,
+          repinned: true,
+          from: { backend, model },
+          to: { backend: 'opencode', model: usable.model },
+        };
+      }
+    }
+    const fallback_backend = P.DEFAULT_BACKEND;
+    const result = this.pin_model(
+      'forge',
+      fallback_backend,
+      P.BACKENDS[fallback_backend].default_model,
+    );
+    return {
+      ...result,
+      repinned: true,
+      from: { backend, model },
+      to: { backend: fallback_backend, model: P.BACKENDS[fallback_backend].default_model },
+    };
+  }
+
   update_config(fields: Record<string, any>): Record<string, any> {
     if (typeof fields !== 'object' || fields === null || Array.isArray(fields)) {
       return { ok: false, error: 'settings payload must be an object' };

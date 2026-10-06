@@ -122,7 +122,6 @@ interface ModelItem {
   model: string;
   traits?: string[];
   keyed: boolean;
-  note?: string;
   gateway?: boolean;
   search?: string;
 }
@@ -2040,7 +2039,7 @@ interface EventPayload {
 
   /* Ask OpenCode which of its free models this account may really use. Runs
      once, after the window is up, because it is the provider's server that
-     decides — not Forge — and a picker that guesses is a picker that lies. */
+     decides — not Forge — and only usable models are shown. */
   let probedZen = false;
   const probeZen = (): void => {
     if (probedZen) return;
@@ -2049,8 +2048,9 @@ interface EventPayload {
     probedZen = true;
     (api as any).probe_opencode().then((result: any) => {
       if (!result || !result.ok || !Array.isArray(result.models)) return;
-      /* repaint from the freshly decided list, so a row that is refused now
-         says so instead of waiting to be found out at request time */
+      if (result.state) applyState(result.state);
+      /* repaint from the usable list, so refused models disappear instead of
+         waiting to be found out at request time */
       models = result.models as ModelItem[];
       const settingsList = $el('setModelList');
       if (settingsList) {
@@ -2062,14 +2062,18 @@ interface EventPayload {
           undefined
         );
       }
-      if (!result.refused || !result.refused.length) return;
-      toast(result.usable.length
-        ? `OpenCode: ${result.usable.length} of ${result.probed} free models answer for this account`
-        : `OpenCode: none of its ${result.probed} free models answer for this account`);
-    }, () => { /* offline, or OpenCode unreachable: the picker keeps saying
-                  nothing rather than claiming a model is broken */ });
+      const usable = Array.isArray(result.usable) ? result.usable.length : 0;
+      const probed = Number(result.probed) || 0;
+      if (result.repinned && result.to && typeof result.to.model === 'string') {
+        toast(`OpenCode: moved the pinned model to ${result.to.model} — ${usable} of ${probed} usable`);
+      } else if (usable > 0) {
+        toast(`OpenCode: ${usable} of ${probed} free models usable`);
+      } else if (probed > 0) {
+        toast('OpenCode: no usable free model right now');
+      }
+    }, () => { /* offline, or OpenCode unreachable: the picker keeps its
+                  unprobed list rather than hiding models that were never checked */ });
   };
-  setTimeout(probeZen, 4000);
 
   /* ───────────────────────── model picker ───────────────────────── */
 
@@ -2077,13 +2081,6 @@ interface EventPayload {
 
   const pinModel = (item: ModelItem, after?: () => void) => {
     if (!bridge()) return;
-    if (item.note) {
-      /* Not "no key" — the credential is there and was accepted. The provider's
-         own server is what says no, so the honest thing is to say what it said
-         instead of sending the reader off to paste something they already have. */
-      toast(`${item.model} — ${item.note}`);
-      return;
-    }
     if (!item.keyed) {
       /* a gateway has no key to paste: asking for one there sends the reader
          looking for a file that does not exist. It needs connecting, not a
@@ -2113,45 +2110,31 @@ interface EventPayload {
     const current = state && state.draft_backend === item.backend && state.draft_model === item.model;
     row.className = 'mrow' + (current ? ' on' : '');
 
-    /* The first line always owns the model name. A long provider refusal used
-       to sit beside it as an inline tag, leaving almost no room for the name:
-       `deepseek-v4-flash-free` collapsed to `deepseek..` and shorter names
-       disappeared entirely. The explanation now has its own full-width line. */
-    const head = document.createElement('div');
-    head.className = 'mhead';
     const name = document.createElement('span');
     name.className = 'mid';
     name.textContent = item.model;
     name.title = `${item.backend} · ${item.model}`;
-    head.appendChild(name);
+    row.appendChild(name);
 
     (item.traits || []).forEach((trait: string) => {
       const tag = document.createElement('span');
       tag.className = 'tag';
       tag.textContent = trait;
-      head.appendChild(tag);
+      row.appendChild(tag);
     });
 
     if (!item.keyed) {
       const nokey = document.createElement('span');
       nokey.className = 'tag nokey';
       nokey.textContent = 'no key';
-      head.appendChild(nokey);
+      row.appendChild(nokey);
     }
 
     if (current) {
       const tick = document.createElement('span');
       tick.className = 'tick';
       tick.innerHTML = ICONS.check;
-      head.appendChild(tick);
-    }
-    row.appendChild(head);
-
-    if (item.note) {
-      const why = document.createElement('div');
-      why.className = 'mwhy';
-      why.textContent = item.note;
-      row.appendChild(why);
+      row.appendChild(tick);
     }
 
     row.addEventListener('click', () => { flashRow(row); pinModel(item, after); });
@@ -4508,6 +4491,9 @@ interface EventPayload {
       paintSessions();
       paintTitle();
       paintSendButton();
+      /* check OpenCode as soon as the engine answers, so the picker starts
+         from usable models rather than waiting on a timer */
+      probeZen();
       /* the welcome setup runs exactly once, on the first launch */
       if (data.state && (data.state as any).first_run) {
         openSetup();

@@ -119,10 +119,10 @@ export class Api {
 
   /** Ask OpenCode which of its free models this account may actually use.
 
-      The catalogue says thirteen are free; the server answers for one. That is
-      not something Forge can know without asking, so it asks — in the
-      background, off the critical path, and the picker is repainted with the
-      answer when it lands. */
+      The catalogue says which models are free; only the server knows which of
+      them answer. Forge asks in the background, hides the refused models from
+      the new picker, and moves a draft off a model that has just been refused
+      so an impossible choice does not stay pinned. */
   async probe_opencode(): Promise<Record<string, any>> {
     const { BACKENDS } = await import('./core/providers');
     const { probe_free_tier } = await import('./core/opencodeAuth');
@@ -130,8 +130,18 @@ export class Api {
     if (!models.length) return { ok: true, probed: 0 };
     const states = await probe_free_tier(models);
     const usable = states.filter((s) => s.ok).map((s) => s.model);
-    const refused = states.filter((s) => !s.ok).map((s) => ({ model: s.model, why: s.why }));
-    return { ok: true, probed: states.length, usable, refused, models: this._session.model_choices() };
+    const repin = this._session.repin_refused_opencode_model();
+    return {
+      ok: true,
+      probed: states.length,
+      usable,
+      unusable: states.length - usable.length,
+      repinned: Boolean(repin.repinned),
+      from: repin.from ?? null,
+      to: repin.to ?? null,
+      models: this._session.model_choices(),
+      state: this._session.get_state(),
+    };
   }
 
   pin_model(backend: string, model: string): Record<string, any> {

@@ -20,9 +20,8 @@ import { forge_dir } from '../paths';
     And OpenCode restricts its free tier to its own app: an unauthenticated
     call is refused with "Missing API key", and a call carrying a valid key is
     refused with "OpenCode's free tier can only be used from within OpenCode".
-    So these models can be listed, and they will answer for the reader whose
-    account allows it, but the refusal is theirs to lift, not ours to work
-    around. */
+    The probe therefore hides refused models instead of listing failures; the
+    refusal is theirs to lift, not ours to work around. */
 
 export const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
 
@@ -215,9 +214,9 @@ const _probe: Map<string, ZenModelState> = new Map();
     Nothing in the catalogue distinguishes them.
 
     So the list Forge offers is not the list that answers, and the only honest
-    way to tell them apart is to ask. Each model is probed on its own endpoint,
-    the answer is what the picker shows, and when OpenCode lifts a restriction
-    the next probe says so — no code change, no frozen list of guesses. */
+    way to tell them apart is to ask. Each model is probed on its own endpoint;
+    refused models are hidden, and when OpenCode lifts a restriction the next
+    probe shows the model again — no code change, no frozen list of guesses. */
 export async function probe_free_tier(models: readonly string[]): Promise<ZenModelState[]> {
   const key = api_key();
   const list = models.map((model) => String(model ?? '').trim()).filter(Boolean);
@@ -287,6 +286,14 @@ export async function probe_free_tier(models: readonly string[]): Promise<ZenMod
     yet is unknown, and unknown is not the same as broken — it stays offered. */
 export function probed_state(model: string): ZenModelState | null {
   return _probe.get(String(model ?? '').trim()) ?? null;
+}
+
+/** A refused probe is a fact about this account on this server, not a guess.
+    The picker hides those models entirely: showing them would only invite a
+    request OpenCode has already said it will not answer. */
+export function is_refused(model: string): boolean {
+  const state = probed_state(model);
+  return Boolean(state && !state.ok);
 }
 
 export function any_probed(): boolean {

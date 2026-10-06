@@ -5,20 +5,14 @@
 - **Space Bunny is now treated as a reasoning model.** It streams real
   `reasoning_content`, so Forge no longer says it has no thinking and now gives
   it a normal reasoning budget; the request shape was checked live against Zen.
-- **A provider refusal no longer eats its model name in the picker.** A long
-  OpenCode refusal used to sit beside the model and squeeze names such as
-  `deepseek-v4-flash-free` down to `deepseek..`. The name keeps the first line
-  and the explanation wraps on a full-width second line.
-- **Forge asks OpenCode which of its free models actually answer, instead of
-  offering thirteen and letting you find out.** OpenCode publishes 13 free models
-  and, measured against a real account on 2026-10-03, its server answers one.
-  Ten refuse with "OpenCode's free tier can only be used from within OpenCode",
-  one is country-restricted, one is listed free but not served, one rates a
-  state rather than answering a chat turn. Nothing in the catalogue
-  distinguishes them, so the picker now asks the server once at startup and
-  shows what it said: *OpenCode serves this one only from inside its own app*.
-  It is not "no key" — the credential was accepted — and when OpenCode lifts a
-  restriction the next start says so with no code change.
+- **Forge shows only the OpenCode free models that answer.** OpenCode publishes
+  13 free models and, measured against a real account on 2026-10-03, its server
+  answers one. The catalogue does not distinguish the usable model from the
+  refused ones, so Forge probes once after startup, hides every probed refusal,
+  and leaves unprobed models visible until they are checked. A draft pinned to
+  a newly refused model moves to the first usable OpenCode model, or back to
+  the default provider when none answered; when OpenCode lifts a restriction,
+  the next probe shows the model again with no code change.
 - **Each Zen model is probed on its own documented endpoint.** `muse-spark-1.3-contributor-free`
   is documented on `/responses` and was being sent to `/chat/completions`,
   which is a refusal whatever the credential.
@@ -41,11 +35,11 @@
   something to hard-code; what it does carry is a naming convention — every free
   model ends in `-free` — so the list is read live and filtered by that. A model
   OpenCode retires disappears on its own, and one it adds free shows up by
-  itself. The credential is read from the OpenCode app already on the machine,
+  itself. The startup probe then keeps only the models that answer. The credential is read from the OpenCode app already on the machine,
   or pasted when there is none, checked and kept owner-only in the keys folder.
-- **Its one refusal is named instead of hidden.** OpenCode serves its free tier
-  from inside its own app only. That is stated plainly when a call is refused,
-  because retrying cannot get past it and a bare 403 reads like a fault in
+- **A fresh refusal during a turn is still named instead of hidden.** If OpenCode
+  refuses a live call after the probe, that refusal is stated plainly, because
+  retrying cannot get past it and a bare 403 reads like a fault in
   Forge. It is their policy to change, not ours to work around.
 - **nemotron-3.5-lightning is back.** It had been dropped as dead: it accepted
   the request and then said nothing, and the 60s idle limit read that silence as

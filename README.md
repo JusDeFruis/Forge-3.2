@@ -28,11 +28,11 @@ Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
 
 ## What changed in 3.2
 
-- OpenCode Zen is a gateway now, offering its free tier: the models Zen names
-  with a `-free` suffix, read live. The credential comes from the OpenCode app
-  already on the machine, or can be pasted when there is none. OpenCode serves
-  that tier from inside its own app, and Forge says so plainly rather than
-  showing a bare 403
+- OpenCode Zen is a gateway now, offering the usable part of its free tier: the
+  models Zen names with a `-free` suffix, read live, then probed after startup
+  so refused models disappear instead of failing at request time. The credential
+  comes from the OpenCode app already on the machine, or can be pasted when
+  there is none
 - `nemotron-3.5-lightning` is available again on the free NVIDIA tier. It had
   been written off as dead when it was really sitting in a queue that the 60s
   limit called a hang; the queue is now waited out, and four probes in a row
