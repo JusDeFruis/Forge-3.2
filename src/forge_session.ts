@@ -520,76 +520,114 @@ export class Forge3Session extends ForgeSessionBase {
     });
   }
 
-  /** plain chat with tools on the same model: web search/fetch, questions to
-      the user, and file work inside a private per-session sandbox */
+/** plain chat with tools on the same model: web search/fetch, questions to
+      the user, and file work inside a private per-session sandbox.
+      If the pinned model is temporarily unavailable (503/429/502/504), the
+      turn is retried with the next model in the backend's cascade instead of
+      failing the turn — same behaviour as the draft pipeline. */
   async _run_chat_lite(job: Job, slot: RoomState, backend: P.Backend, model: string): Promise<void> {
     const short = model.split('/').slice(-1)[0];
     const sandbox = this._sandbox_dir();
     const since = Date.now();
     this._reset_passed_questions();
     const lite_config = { ...job.config, workspace: sandbox, agent_enabled: true };
-    let result: AgentResult;
-    try {
-      const known = this._known_for(sandbox);
-      result = await run_agent_turn({
-        config: lite_config,
-        history: this._plain_history.filter((message) => message.role !== 'system'),
-          model,
+    /* Build the cascade list: pinned model first, then the backend's fallback
+       chain. Deduplicate so we don't hit the same model twice. */
+    const cascade = [...cascade_for(job.config['draft_backend'], String(job.config['draft_model']))];
+    const seen = new Set<string>();
+    const models = cascade.filter((m) => !seen.has(m) && seen.add(m));
+
+    let result: AgentResult | null = null;
+    let last_error: Error | null = null;
+
+    for (let attempt = 0; attempt < models.length; attempt++) {
+      const this_model = models[attempt];
+      const is_first = attempt === 0;
+      const this_short = this_model.split('/').slice(-1)[0];
+
+      if (!is_first && !slot.stop.is_set()) {
+        this._emit('phase', 'forge', {
+          phase: 'thinking',
+          hold: true,
+          attempt: attempt + 1,
+          of: models.length,
+          label: `held · ${this_short}`,
+        });
+      }
+
+      this._reset_passed_questions();
+      const known = this._known_for(this._sandbox_dir());
+      try {
+        result = await run_agent_turn({
+          config: { ...job.config, workspace: this._sandbox_dir(), agent_enabled: true },
+          history: this._plain_history.filter((message) => message.role !== 'system'),
+          model: this_model,
           dialect: backend.dialect,
           max_tokens: 65536,
           open_client: () => P.open_client(backend, null, tls_verify(job.config)),
-          identity: this._forge_prompt(model, backend.name, ''),
-          known,
+          identity: this._forge_prompt(this_model, backend.name, ''),
+          known: this._known_for(this._sandbox_dir()),
           system_note: CHAT_LITE_NOTE,
-        hooks: {
-          is_stopped: () => slot.stop.is_set(),
-          phase: (payload) => this._set_phase('forge', String(payload['phase'] || 'thinking'), payload),
-          trace: (entry) => this._emit('agent_trace', 'forge', entry),
-          notice: (message) => this._emit('effort', 'forge', { message }),
-          delta: (text) => this._emit('token', 'forge', { text }),
-          reasoning: (text) => this._emit('reasoning', 'forge', { text }),
-          ask_permission: (request) => this._tool_permission(request),
-          ask_user: (question, options) => this._ask_user(question, options),
-        },
-      });
-    } catch (error) {
-      if (slot.stop.is_set()) {
-        this._plain_history.pop();
-        this._emit('cancelled', 'forge', { files: this._sandbox_files(since) });
+          hooks: {
+            is_stopped: () => slot.stop.is_set(),
+            phase: (payload) => this._set_phase('forge', String(payload['phase'] || 'thinking'), payload),
+            trace: (entry) => this._emit('agent_trace', 'forge', entry),
+            notice: (message) => this._emit('effort', 'forge', { message }),
+            delta: (text) => this._emit('token', 'forge', { text }),
+            reasoning: (text) => this._emit('reasoning', 'forge', { text }),
+            ask_permission: (request) => this._tool_permission(request),
+            ask_user: (question, options) => this._ask_user(question, options),
+          },
+        });
+        if (!result.text) {
+          if (slot.stop.is_set()) {
+            this._plain_history.pop();
+            this._emit('cancelled', 'forge', { files: this._sandbox_files(since) });
+            return;
+          }
+          /* empty answer on a model that is not the last fallback — try next */
+          if (attempt < models.length - 1) continue;
+          throw new Error(`${this_short} returned no text`);
+        }
+        this._remember_known(this._sandbox_dir(), result.observed);
+        const shown = result.text;
+        this._plain_history.push({ role: 'assistant', content: shown });
+        slot.last_reply = shown;
+        this._emit('complete', 'forge', {
+          text: shown,
+          usage: this._add_usage('forge', result.usage),
+          generated_by: { backend: job.config['draft_backend'], model: this_model },
+          steps: result.steps,
+          tools: result.used_tools,
+          files: this._sandbox_files(since),
+          ..._client_reasoning(result.client),
+        });
         return;
+      } catch (error) {
+        last_error = error instanceof Error ? error : new Error('the chat turn failed');
+        if (slot.stop.is_set()) {
+          this._plain_history.pop();
+          this._emit('cancelled', 'forge', { files: this._sandbox_files(since) });
+          return;
+        }
+        /* transient: 503/429/502/504 or any error not classified permanent.
+           If there are more models in the cascade, try the next one. */
+        const status = P._provider_status(last_error);
+        const is_transient = [429, 502, 503, 504].includes(status ?? -1) || !P.is_permanent_provider_error(last_error);
+        if (!is_transient || attempt >= models.length - 1) {
+          this._plain_history.pop();
+          const failure = last_error instanceof Error ? last_error : new Error('the chat turn failed');
+          (failure as { model?: string }).model = this_model;
+          throw failure;
+        }
+        /* transient and more models left — try the next one */
       }
-      this._plain_history.pop();
-      const failure = error instanceof Error ? error : new Error('the chat turn failed');
-      (failure as { model?: string }).model = model;
-      throw failure;
     }
-    if (!result.text) {
-      if (slot.stop.is_set()) {
-        this._plain_history.pop();
-        this._emit('cancelled', 'forge', { files: this._sandbox_files(since) });
-        return;
-      }
-      this._plain_history.pop();
-      const failure = new Error(`${short} returned no text`);
-      (failure as { model?: string }).model = model;
-      throw failure;
-    }
-    this._remember_known(sandbox, result.observed);
-    const shown = result.text;
-    this._plain_history.push({ role: 'assistant', content: shown });
-    slot.last_reply = shown;
-    this._emit('complete', 'forge', {
-      text: shown,
-      usage: this._add_usage('forge', result.usage),
-      generated_by: {
-        backend: job.config['draft_backend'],
-        model,
-      },
-      steps: result.steps,
-      tools: result.used_tools,
-      files: this._sandbox_files(since),
-      ..._client_reasoning(result.client),
-    });
+    /* all models exhausted */
+    this._plain_history.pop();
+    const failure = last_error instanceof Error ? last_error : new Error('all fallback models failed');
+    (failure as { model?: string }).model = model;
+    throw failure;
   }
 
   /** the private per-session folder where chat turns may read, write, run

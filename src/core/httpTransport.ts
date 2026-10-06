@@ -87,14 +87,6 @@ function connectDelay(attempt: number): number {
   return 250 * 2 ** attempt;
 }
 
-/** the wait before trying a busy endpoint again. A rate limit needs real
-    seconds to reset, so it is given more than a capacity blip: retrying a 429
-    after a second just spends the quota twice. */
-function busyDelay(status: number, attempt: number): number {
-  if (status === 429) return 4000 * attempt;
-  return 1200 * attempt;
-}
-
 function buildBody(body: unknown): { body?: BodyInit; contentType?: string } {
   if (body === undefined || body === null) return {};
   if (typeof body === 'string') return { body, contentType: 'application/json' };
@@ -223,14 +215,21 @@ function hasHeader(headers: Record<string, string>, name: string): boolean {
     the call is simply made again after a short breath. */
 const BUSY_STATUSES = new Set([429, 500, 502, 503, 504]);
 
+/* on 503 the queue can be long: more attempts, and exponential backoff so a
+   genuinely busy provider gets a real chance to clear its queue. */
+function busyDelay(status: number, attempt: number): number {
+  if (status === 503) return Math.min(30000, 2000 * Math.pow(1.7, attempt - 1));
+  if (status === 429) return 4000 * attempt;
+  return 1200 * attempt;
+}
+
 export async function httpRequest(url: string, options: HttpRequestOptions = {}): Promise<HttpResponse> {
   secureTarget(url);
   const timeoutMs = Math.round((options.timeout ?? requestTimeoutSeconds) * 1000);
   const retries = Math.max(1, connectRetries);
-  /* a busy endpoint gets a couple of extra chances on top of the connect
-     retries, but never enough to turn one click into a wait the reader
-     cannot explain */
-  const busyRetries = 2;
+  /* a busy endpoint gets several extra chances; on 503 we keep going
+     longer because NVIDIA's free tier can queue for a minute or more. */
+  const busyRetries = 4;
   let lastError: unknown;
   for (let i = 0; i < retries; i++) {
     let attemptIndex = 0;

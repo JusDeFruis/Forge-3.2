@@ -11,6 +11,10 @@
   with a short budget so a slow provider cannot hold startup closed. A probe
   that times out is recorded as unanswered rather than refused, so our own
   silence never hides a model.
+- **NVIDIA 503 no longer kills the turn.** The free tier often queues for a
+  minute or more. The transport now retries 503 with exponential backoff
+  (up to 4 extra attempts), and the chat/agent turn now cascades to the next
+  model in the backend's fallback chain instead of failing the whole turn.
 - **Long shell commands are no longer cut off at 60 seconds.** Two separate bugs
   made builds impossible. The timeout was a fixed wall clock, so `npm install` or
   `tsc` was killed mid-write; it now measures *silence*, and every line of
