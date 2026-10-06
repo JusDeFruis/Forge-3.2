@@ -11,6 +11,10 @@
   with a short budget so a slow provider cannot hold startup closed. A probe
   that times out is recorded as unanswered rather than refused, so our own
   silence never hides a model.
+- **The agent now persists until the task is done.** MAX_AGENT_STEPS raised
+  from 10 to 50. System prompt rewritten to demand aggressive tool use,
+  retry on failure, and completion of the user's request — no more stopping
+  after one tool call or one error.
 - **NVIDIA 503 no longer kills the turn.** The free tier often queues for a
   minute or more. The transport now retries 503 with exponential backoff
   (up to 4 extra attempts), and the chat/agent turn now cascades to the next

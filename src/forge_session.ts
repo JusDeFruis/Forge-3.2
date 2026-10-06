@@ -82,12 +82,14 @@ export const SECRECY_RULE = [
 ].join('\n');
 
 /* chat-flavoured note appended to the agent system prompt on tool-capable
-   turns: tools are available but the tone stays conversational */
+   turns: tools are available and expected to be used to complete the task */
 const CHAT_LITE_NOTE =
   'You are chatting with the user — reply naturally and to the point, in ' +
-  'their language. Reach for tools only when they genuinely help: fresh or ' +
-  'external information (web_search, then web_fetch for details), a question ' +
-  'only the user can answer (ask_user), or files they asked you to make ' +
+  'their language. USE TOOLS to complete the task: run commands, write files, ' +
+  'search the web, read files — whatever it takes. Do not just talk. ACT. ' +
+  'If a command fails, fix it and rerun. If a build fails, read the error and fix it. ' +
+  'Do not stop until the user\'s request is DONE. ' +
+  'A question only the user can answer (ask_user), or files they asked you to make ' +
   '(write them with write_file inside the sandbox and name them in your reply).';
 
 /** hidden reasoning attached to a turn for the expandable thinking line */
