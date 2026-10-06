@@ -334,9 +334,6 @@ export interface EffortChoice {
   message: string | null;
 }
 
-/* turn the asked-for level into one the model can take — the nearest
-   notch down when the ask is above it, the nearest notch up when the
-   model can't go as low as asked — and say so when it had to move */
 export function clamp_effort(model: string, requested: unknown): EffortChoice {
   const want = normalize_effort(requested);
   const levels = effort_levels_for(model);
@@ -358,7 +355,7 @@ export function clamp_effort(model: string, requested: unknown): EffortChoice {
   if (levels.length === 1) {
     message = `${name} has no thinking — thinking off`;
   } else if (want === 'off') {
-    message = `${name} always thinks — using ${best}`;
+    message = `${name} always thinks — thinking cannot be fully disabled for this model`;
   } else {
     message = `${name} can't use ${want} thinking — using ${best}`;
   }
