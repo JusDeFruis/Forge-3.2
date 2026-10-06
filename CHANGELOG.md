@@ -11,6 +11,15 @@
   with a short budget so a slow provider cannot hold startup closed. A probe
   that times out is recorded as unanswered rather than refused, so our own
   silence never hides a model.
+- **The agent now chains tools instead of stopping after each one.** The system
+  prompt explicitly demands tool chaining: a shell command that returns is NOT a
+  reason to stop; read its output, decide the next command, and call again.
+  The closing message now asks for the next concrete step instead of declaring
+  the task impossible.
+- **The agent remembers what it read across turns.** Workspace observations
+  (files read, folders listed, writes) are cached per folder and injected into
+  the next turn's prompt, so the model no longer re-reads the whole project
+  every turn.
 - **Closing the app no longer loses the end of a conversation.** The window
   could be closed while the last turn was still on its way to disk, so an
   immediate close after an answer dropped the ending. The close is now held,
