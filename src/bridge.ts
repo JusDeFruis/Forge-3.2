@@ -56,6 +56,31 @@ export class Api {
     };
   }
 
+  /** Stop, settle and save before the process exits. Closing the window used to
+      race the last turn: the transcript could reach the screen while its disk
+      write was still queued, so an immediate close lost the ending. */
+  async shutdown(timeout_seconds = 10): Promise<Record<string, any>> {
+    const timeout = Number.isFinite(Number(timeout_seconds))
+      ? Math.max(0, Math.min(30, Number(timeout_seconds)))
+      : 10;
+    try {
+      this._session.stop();
+    } catch {
+      /* stopping is best effort; saving still matters */
+    }
+    try {
+      await this._session.wait_idle(timeout);
+    } catch {
+      /* an unsettled job must not wedge shutdown */
+    }
+    try {
+      await this._session._autosave();
+      return { ok: true, saved: true };
+    } catch {
+      return { ok: false, saved: false };
+    }
+  }
+
   get_state(): Record<string, any> {
     return this._session.get_state();
   }

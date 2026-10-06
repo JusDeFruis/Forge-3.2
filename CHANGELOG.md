@@ -11,6 +11,13 @@
   with a short budget so a slow provider cannot hold startup closed. A probe
   that times out is recorded as unanswered rather than refused, so our own
   silence never hides a model.
+- **Closing the app no longer loses the end of a conversation.** The window
+  could be closed while the last turn was still on its way to disk, so an
+  immediate close after an answer dropped the ending. The close is now held,
+  running rooms are stopped and given a bounded window to settle, the
+  conversation is saved with the live session, and only then does the process
+  exit. Saving at close uses the session that holds the conversation — a second
+  one would have written the wrong chat.
 - **The agent now persists until the task is done.** MAX_AGENT_STEPS raised
   from 10 to 50. System prompt rewritten to demand aggressive tool use,
   retry on failure, and completion of the user's request — no more stopping

@@ -211,8 +211,29 @@ function main(): void {
       );
   });
 
+  /* The native window can disappear before an async turn finishes flushing.
+     Cancel the close synchronously, settle and save with the live session, and
+     only then let the process go. Creating a second Api here would save the
+     wrong session. */
+  let closing = false;
+  const shutdown = (): void => {
+    if (closing) return;
+    closing = true;
+    void api.shutdown(10).finally(() => {
+      try {
+        app.exit();
+      } catch {
+        /* exiting is best effort once history has been flushed */
+      }
+    });
+  };
+  win.on('close', (event) => {
+    event.preventDefault();
+    shutdown();
+  });
+
   app.on('application-close-requested', () => {
-    app.exit();
+    shutdown();
   });
 
   if (!dev) {

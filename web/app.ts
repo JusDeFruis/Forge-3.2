@@ -4516,6 +4516,7 @@ interface EventPayload {
   bindScroller($el('sheetbody'));
 
   window.addEventListener('pywebviewready', boot);
+
   boot();
 })();
 
