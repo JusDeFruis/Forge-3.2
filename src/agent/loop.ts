@@ -56,6 +56,9 @@ export interface AgentParams {
   identity?: string;
   /** extra system guidance appended to the built prompt (chat tone, …) */
   system_note?: string;
+  /** what earlier turns in this session already established about the
+      workspace, so the model does not re-read the whole folder every turn */
+  known?: WorkspaceObservation[];
 }
 
 export interface AgentResult {
@@ -64,6 +67,68 @@ export interface AgentResult {
   steps: number;
   used_tools: string[];
   usage: { input: number; output: number };
+  /** What this turn already established about the workspace: the files it read,
+      the folders it listed, what it wrote. The next turn is handed this so it
+      starts from what is already known instead of re-reading the whole folder. */
+  observed?: WorkspaceObservation[];
+}
+
+/** One durable fact about the workspace, small enough to keep in context:
+    a file's shape, not its whole body. */
+export interface WorkspaceObservation {
+  kind: 'read' | 'list' | 'write' | 'search' | 'other';
+  /** the path, relative to the workspace root */
+  target: string;
+  /** one line: line count, entry count, or what the write did */
+  detail: string;
+}
+
+const OBSERVATION_MAX = 60;
+
+export function observations_line(notes: readonly WorkspaceObservation[]): string {
+  if (!notes.length) return '';
+  const rows = notes.map((note) => `- ${note.kind} ${note.target}${note.detail ? ` (${note.detail})` : ''}`);
+  return [
+    '',
+    'ALREADY KNOWN ABOUT THIS WORKSPACE',
+    'You have already inspected these earlier in this session. Reuse that knowledge',
+    'instead of reading them again; re-read only after you change a file yourself.',
+    ...rows,
+  ].join('\n');
+}
+
+function observe(list: WorkspaceObservation[], note: WorkspaceObservation): void {
+  const at = list.findIndex(
+    (entry) => entry.kind === note.kind && entry.target === note.target,
+  );
+  if (at >= 0) list.splice(at, 1);
+  list.push(note);
+  /* the oldest facts go first: a stale listing is worth less than the shape of
+     something the session is still working on */
+  while (list.length > OBSERVATION_MAX) list.shift();
+}
+
+function note_from_result(tool: string, args: Record<string, any>, result: string): WorkspaceObservation | null {
+  const clean = String(result ?? '').trim();
+  const target = String(args['path'] ?? args['query'] ?? '').trim();
+  if (tool === 'list_files') {
+    /* the list tool answers one "file path" or "dir  path" row per line */
+    const count = clean.split('\n').filter((line) => /^(file|dir)\s+/.test(line.trim())).length;
+    return { kind: 'list', target: target || '.', detail: `${count || 1} entries listed` };
+  }
+  if (tool === 'read_file') {
+    /* the read tool answers "<path> · N lines · offset …" */
+    const lines = /·\s*(\d+)\s*lines/.exec(clean);
+    return { kind: 'read', target, detail: lines ? `${lines[1]} lines` : 'read' };
+  }
+  if (tool === 'write_file' || tool === 'replace_in_file') {
+    return { kind: 'write', target, detail: clean.split('\n')[0].slice(0, 90) };
+  }
+  if (tool === 'search_files') {
+    const match = /(\d+) match/.exec(clean);
+    return { kind: 'search', target: target || '.', detail: match ? `${match[1]} matches` : 'searched' };
+  }
+  return null;
 }
 
 export function agent_enabled(config: ForgeConfig): boolean {
@@ -95,6 +160,7 @@ export function build_system(workspace: Workspace, config: ForgeConfig, tools: T
     '- Paths are always relative to the workspace root. Never use absolute paths or "..".',
     '- Use the tools to inspect files instead of guessing their contents.',
     '- Read a file before rewriting it, unless you wrote it earlier in this turn.',
+    '- Files listed under ALREADY KNOWN were inspected earlier in this session: use that instead of reading them again.',
     '- Keep edits minimal and leave the workspace in a working state.',
     '- A tool reply starting with "error:" means the arguments were wrong — correct them, do not repeat the same call.',
     '- When only the user can decide (a choice, credentials, confirmation), ask them with ask_user instead of guessing.',
@@ -149,6 +215,7 @@ async function run_agent_turn_inner(params: AgentParams, signal: AbortSignal): P
   const tools = agent_tools(params.config);
   const identity = String(params.identity || '').trim();
   const system = (identity ? `${identity}\n\n` : '') + build_system(workspace, params.config, tools) +
+    observations_line(params.known ?? []) +
     (String(params.system_note || '').trim() ? `\n\n${String(params.system_note).trim()}` : '');
   const messages: ChatMessage[] = [...(params.history ?? [])];
   const client = params.open_client();
@@ -264,6 +331,7 @@ async function run_agent_turn_inner(params: AgentParams, signal: AbortSignal): P
   const temperature = Number(params.config['temp'] ?? 0.9);
   const top_p = Number(params.config['top_p'] ?? 1);
   const used: string[] = [];
+  const observed: WorkspaceObservation[] = [...(params.known ?? [])];
   let answer = '';
   let steps = 0;
   /* the model only gets a level it can honour — a moved level is reported
@@ -358,6 +426,10 @@ async function run_agent_turn_inner(params: AgentParams, signal: AbortSignal): P
         );
       }
       used.push(call.name);
+      if (!parsed.error) {
+        const note = note_from_result(call.name, parsed.args, result);
+        if (note) observe(observed, note);
+      }
       messages.push({ role: 'tool', tool_call_id: call.id, content: String(result) });
     }
     if (params.hooks.is_stopped()) break;
@@ -391,7 +463,7 @@ async function run_agent_turn_inner(params: AgentParams, signal: AbortSignal): P
   }
 
   const visible = hold.sanitize_visible_reply(answer, '', system) || String(answer ?? '').trim();
-  return { text: visible, client, steps, used_tools: used, usage };
+  return { text: visible, client, steps, used_tools: used, usage, observed };
 }
 
 export function agent_host_line(config: ForgeConfig): string {

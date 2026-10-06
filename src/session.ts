@@ -2006,16 +2006,28 @@ export class ForgeSessionBase {
     return { workspace: resolved };
   }
 
+  /** called whenever the folder behind the session changes; a subclass that
+      caches what it learned about a folder uses it to drop the stale facts */
+  _on_workspace_changed(_previous: string, _next: string): void {}
+
   _apply_session_mode(payload: Record<string, any>): void {
     const picked = this._resolve_workspace(payload['workspace']);
+    const previous = this._session_workspace;
     this._session_workspace = picked.workspace;
+    if (previous !== picked.workspace) {
+      this._on_workspace_changed(previous, picked.workspace);
+    }
     this._session_project = String(payload['project_id'] || '');
     this._session_agent_shell = Boolean(payload['agent_shell']) && Boolean(picked.workspace);
     this._session_agent_web = Boolean(payload['agent_web']) && Boolean(picked.workspace);
   }
 
   _fresh_session(workspace = '', shell = false, web = false, project_id = ''): Record<string, any> {
+    const previous_workspace = this._session_workspace;
     this._session_workspace = workspace;
+    if (previous_workspace !== workspace) {
+      this._on_workspace_changed(previous_workspace, workspace);
+    }
     this._session_project = project_id;
     this._session_agent_shell = Boolean(shell) && workspace !== '';
     this._session_agent_web = Boolean(web) && workspace !== '';

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { agent_enabled, run_agent_turn, workspace_error, type AgentResult } from './agent/loop';
+import { agent_enabled, run_agent_turn, workspace_error, type AgentResult, type WorkspaceObservation } from './agent/loop';
 import { zip_directory } from './agent/workspace';
 import * as hold from './core/hold';
 import { cascade_for, cheap_choices, remap_pin } from './cheap';
@@ -285,6 +285,7 @@ export class Forge3Session extends ForgeSessionBase {
     this._emit('turn', 'forge', { role: 'user', text: job.text });
     const backend = P.get_backend(job.config['draft_backend']);
     const [model] = cascade_for(job.config['draft_backend'], String(job.config['draft_model']));
+    const folder = String(job.config['workspace'] ?? '').trim();
     let result: AgentResult;
     try {
       result = await run_agent_turn({
@@ -295,6 +296,7 @@ export class Forge3Session extends ForgeSessionBase {
         max_tokens: 65536,
         open_client: () => P.open_client(backend, null, tls_verify(job.config)),
         identity: this._forge_prompt(model, backend.name, ''),
+        known: this._known_for(folder),
         hooks: {
           is_stopped: () => slot.stop.is_set(),
           phase: (payload) => this._set_phase('forge', String(payload['phase'] || 'thinking'), payload),
@@ -324,6 +326,8 @@ export class Forge3Session extends ForgeSessionBase {
       this._pop_trailing_user();
       throw new Error('the agent returned no text');
     }
+    /* keep what this turn learned, so the next one starts from it */
+    this._remember_known(folder, result.observed);
     const shown = result.text;
     this._draft_history.push({ role: 'assistant', content: shown });
     this._last_draft = shown;
@@ -355,6 +359,40 @@ export class Forge3Session extends ForgeSessionBase {
 
   /** true when the message is plain conversation, not prompt work */
   _plain_history: ChatMessage[] = [];
+
+  /** What the agent has already established about each workspace in this
+      session. Without it every turn starts blind and re-reads the whole
+      folder: the tool results live only inside one agent turn and are thrown
+      away when it ends. Kept per folder so switching projects never carries
+      one folder's facts into another's. */
+  _workspace_known = new Map<string, WorkspaceObservation[]>();
+
+  _known_for(folder: string): WorkspaceObservation[] {
+    const key = String(folder ?? '').trim().toLowerCase();
+    return key ? this._workspace_known.get(key) ?? [] : [];
+  }
+
+  _remember_known(folder: string, notes: readonly WorkspaceObservation[] | undefined): void {
+    const key = String(folder ?? '').trim().toLowerCase();
+    if (!key || !notes || !notes.length) return;
+    this._workspace_known.set(key, [...notes]);
+  }
+
+  /** a new chat, or a different folder, starts from a clean slate */
+  _forget_known(folder?: string): void {
+    if (folder === undefined) {
+      this._workspace_known.clear();
+      return;
+    }
+    this._workspace_known.delete(String(folder ?? '').trim().toLowerCase());
+  }
+
+  /* Moving to another folder must not carry the previous folder's facts across:
+     the model would then "know" files it never opened here. */
+  override _on_workspace_changed(previous: string, next: string): void {
+    this._forget_known(previous);
+    void next;
+  }
 
   override _reset_plain_chat(): void {
     this._plain_history = [];
@@ -486,6 +524,7 @@ export class Forge3Session extends ForgeSessionBase {
     const lite_config = { ...job.config, workspace: sandbox, agent_enabled: true };
     let result: AgentResult;
     try {
+      const known = this._known_for(sandbox);
       result = await run_agent_turn({
         config: lite_config,
         history: this._plain_history.filter((message) => message.role !== 'system'),
@@ -494,6 +533,7 @@ export class Forge3Session extends ForgeSessionBase {
           max_tokens: 65536,
           open_client: () => P.open_client(backend, null, tls_verify(job.config)),
           identity: this._forge_prompt(model, backend.name, ''),
+          known,
           system_note: CHAT_LITE_NOTE,
         hooks: {
           is_stopped: () => slot.stop.is_set(),
@@ -528,6 +568,7 @@ export class Forge3Session extends ForgeSessionBase {
       (failure as { model?: string }).model = model;
       throw failure;
     }
+    this._remember_known(sandbox, result.observed);
     const shown = result.text;
     this._plain_history.push({ role: 'assistant', content: shown });
     slot.last_reply = shown;

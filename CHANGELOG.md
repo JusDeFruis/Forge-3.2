@@ -11,6 +11,14 @@
   with a short budget so a slow provider cannot hold startup closed. A probe
   that times out is recorded as unanswered rather than refused, so our own
   silence never hides a model.
+- **The agent no longer re-reads the whole workspace every turn.** Tool results
+  lived only inside one agent turn and were discarded when it ended, so each new
+  message started blind and listed and read everything again. Each turn now
+  records what it established — a file's line count, a folder's size, what it
+  wrote — and the next turn is handed that under `ALREADY KNOWN`, with a note to
+  re-read only what it changed. The facts are one line per file, not file bodies,
+  and they are kept per folder so switching projects never carries one folder's
+  knowledge into another's.
 - **Space Bunny is now treated as a reasoning model.** It streams real
   `reasoning_content`, so Forge no longer says it has no thinking and now gives
   it a normal reasoning budget; the request shape was checked live against Zen.
