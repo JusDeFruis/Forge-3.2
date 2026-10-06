@@ -173,6 +173,10 @@ export function build_system(workspace: Workspace, config: ForgeConfig, tools: T
     '- Answer in the language the user wrote in.',
     '',
     'PERSISTENCE: Do not stop after one tool call. Do not stop after an error. Keep going until the user\'s request is COMPLETELY satisfied. If a build fails, read the error, fix it, and rebuild. If a command times out, run it again with a longer timeout. The user asked for a result — deliver it.',
+    '',
+    'STEP BUDGET: You have up to 50 tool calls in this turn. Use them. Chain tools continuously — a shell command that returns is NOT a reason to stop. Read its output, decide the next command, and call run_command again. Only answer the user when the task is DONE.',
+    '',
+    'TOOL CHAINING: After EVERY tool result, decide what you need next and CALL ANOTHER TOOL IMMEDIATELY. Do not write a text response just because a tool returned — only answer the user when the task is DONE. A shell command that returns is NOT a reason to stop; read its output, decide the next command, and call run_command again. Chain tools until the task is DONE.',
   ].join('\n');
 }
 
@@ -441,12 +445,16 @@ async function run_agent_turn_inner(params: AgentParams, signal: AbortSignal): P
 
   if (!answer && !params.hooks.is_stopped()) {
     safe_phase({ phase: 'thinking', label: 'writing the answer' });
-    const closing: ChatMessage[] = [
+const closing: ChatMessage[] = [
       ...messages,
       {
         role: 'user',
         content:
-          'Tool budget reached. Give the final answer now: what you changed, what ran, what is left. No more tool calls.',
+          'This turn has reached its tool budget. Write the answer now, in this order: ' +
+          '(1) exactly what you changed and which commands ran, (2) what is still missing, ' +
+          '(3) the next concrete command or edit the user can run to finish. ' +
+          'Do not apologise, do not say the task is impossible, and never tell the user to ' +
+          'fix things manually — give them the exact next step instead.',
       },
     ];
     const raw_final: string[] = [];

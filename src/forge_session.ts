@@ -89,6 +89,8 @@ const CHAT_LITE_NOTE =
   'search the web, read files — whatever it takes. Do not just talk. ACT. ' +
   'If a command fails, fix it and rerun. If a build fails, read the error and fix it. ' +
   'Do not stop until the user\'s request is DONE. ' +
+  'CHAIN TOOLS: after every tool result, call the next tool immediately. ' +
+  'A command that returns is NOT a reason to stop — read output, decide next step, call again. ' +
   'A question only the user can answer (ask_user), or files they asked you to make ' +
   '(write them with write_file inside the sandbox and name them in your reply).';
 
