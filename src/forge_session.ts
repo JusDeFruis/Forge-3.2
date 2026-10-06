@@ -682,11 +682,12 @@ export class Forge3Session extends ForgeSessionBase {
     const target = String(session_id || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
     const dir = target ? path.join(forge_dir(), 'sandbox', target) : '';
     const done = super.delete_session(session_id);
-    if (done['ok'] && dir) {
+    if (dir) {
       try {
         fs.rmSync(dir, { recursive: true, force: true });
-      } catch {
-        /* a locked file must not fail the deletion of the chat itself */
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        this._emit('error', null, { message: `failed to remove sandbox for ${session_id}: ${message}` });
       }
     }
     return done;
