@@ -2113,37 +2113,45 @@ interface EventPayload {
     const current = state && state.draft_backend === item.backend && state.draft_model === item.model;
     row.className = 'mrow' + (current ? ' on' : '');
 
+    /* The first line always owns the model name. A long provider refusal used
+       to sit beside it as an inline tag, leaving almost no room for the name:
+       `deepseek-v4-flash-free` collapsed to `deepseek..` and shorter names
+       disappeared entirely. The explanation now has its own full-width line. */
+    const head = document.createElement('div');
+    head.className = 'mhead';
     const name = document.createElement('span');
     name.className = 'mid';
     name.textContent = item.model;
-    row.appendChild(name);
+    name.title = `${item.backend} · ${item.model}`;
+    head.appendChild(name);
 
     (item.traits || []).forEach((trait: string) => {
       const tag = document.createElement('span');
       tag.className = 'tag';
       tag.textContent = trait;
-      row.appendChild(tag);
+      head.appendChild(tag);
     });
 
     if (!item.keyed) {
       const nokey = document.createElement('span');
       nokey.className = 'tag nokey';
       nokey.textContent = 'no key';
-      row.appendChild(nokey);
-    }
-
-    if (item.note) {
-      const why = document.createElement('span');
-      why.className = 'tag nokey';
-      why.textContent = item.note;
-      row.appendChild(why);
+      head.appendChild(nokey);
     }
 
     if (current) {
       const tick = document.createElement('span');
       tick.className = 'tick';
       tick.innerHTML = ICONS.check;
-      row.appendChild(tick);
+      head.appendChild(tick);
+    }
+    row.appendChild(head);
+
+    if (item.note) {
+      const why = document.createElement('div');
+      why.className = 'mwhy';
+      why.textContent = item.note;
+      row.appendChild(why);
     }
 
     row.addEventListener('click', () => { flashRow(row); pinModel(item, after); });

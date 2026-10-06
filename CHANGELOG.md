@@ -2,6 +2,13 @@
 
 ## Forge 3.2
 
+- **Space Bunny is now treated as a reasoning model.** It streams real
+  `reasoning_content`, so Forge no longer says it has no thinking and now gives
+  it a normal reasoning budget; the request shape was checked live against Zen.
+- **A provider refusal no longer eats its model name in the picker.** A long
+  OpenCode refusal used to sit beside the model and squeeze names such as
+  `deepseek-v4-flash-free` down to `deepseek..`. The name keeps the first line
+  and the explanation wraps on a full-width second line.
 - **Forge asks OpenCode which of its free models actually answer, instead of
   offering thirteen and letting you find out.** OpenCode publishes 13 free models
   and, measured against a real account on 2026-10-03, its server answers one.
@@ -12,7 +19,7 @@
   shows what it said: *OpenCode serves this one only from inside its own app*.
   It is not "no key" — the credential was accepted — and when OpenCode lifts a
   restriction the next start says so with no code change.
-- **Each Zen model is asked on its own endpoint.** `muse-spark-1.3-contributor-free`
+- **Each Zen model is probed on its own documented endpoint.** `muse-spark-1.3-contributor-free`
   is documented on `/responses` and was being sent to `/chat/completions`,
   which is a refusal whatever the credential.
 - **A gateway credential now reaches the request, not just the settings screen.**

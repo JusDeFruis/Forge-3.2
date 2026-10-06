@@ -1251,8 +1251,9 @@ kbd {
 
 .mrow {
   display: flex;
-  align-items: center;
-  gap: 9px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 4px 9px;
   padding: 7px 8px;
   border-radius: 6px;
   cursor: pointer;
@@ -1260,7 +1261,14 @@ kbd {
 }
 .mrow:hover, .mrow.cursor { background: var(--panel); color: var(--ink); }
 .mrow.on { background: var(--signal-soft); color: var(--ink); }
-.mrow .mid {
+.mrow .mhead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.mrow .mhead .mid {
   flex: 1;
   min-width: 0;
   font-family: var(--mono);
@@ -1269,7 +1277,7 @@ kbd {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.mrow .tag {
+.mrow .mhead .tag {
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: .1em;
@@ -1280,8 +1288,16 @@ kbd {
   padding: 1px 5px;
   flex: none;
 }
-.mrow .tag.nokey { color: var(--warn); border-color: rgba(240, 179, 92, .34); }
-.mrow .tick { color: var(--signal); flex: none; font-size: 11px; }
+.mrow .mhead .tag.nokey { color: var(--warn); border-color: rgba(240, 179, 92, .34); }
+.mrow .mhead .tick { color: var(--signal); flex: none; font-size: 11px; }
+.mrow .mwhy {
+  flex: 1 1 100%;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--warn);
+  white-space: normal;
+}
 
 .poplink {
   appearance: none;

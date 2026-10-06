@@ -257,7 +257,7 @@ export const THINKING_MODEL_MARKERS: string[] = [
   'grok-4.7', 'grok-4.6', 'gemini-3.8', 'gemini-3.7', 'gemini-3.6', 'gemini-3.5', 'muse-spark',
   'muse-glimmer', 'nemotron-3', 'gemma-4', 'glm-5',
   'qwen3.8', 'qwen3.7', 'reasoner', 'thinking',
-  'kimi-k3', 'kimi-k2-thinking',
+  'kimi-k3', 'kimi-k2-thinking', 'space-bunny',
 ];
 export const REASONING_BUDGET_RATIO = 0.5;
 export const MIN_REASONING_TOKENS = 1024;
