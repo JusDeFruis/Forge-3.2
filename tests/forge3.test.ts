@@ -266,6 +266,35 @@ test('a pasted Zen key unlocks the paid catalogue, and the probe still decides',
   }
 });
 
+test('Linux installs its own webview runtime instead of linker-crashing', async () => {
+  const deps = await import('../src/core/linuxDeps.js');
+
+  /* detection reads ldconfig output, both 4.0 and 4.1 count */
+  assert.strictEqual(deps.webkit_present('libwebkit2gtk-4.1.so.0 (libc6,x86-64) => /lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so.0'), true);
+  assert.strictEqual(deps.webkit_present('libwebkit2gtk-4.0.so.37 (libc6,x86-64) => /lib/libwebkit2gtk-4.0.so.37'), true);
+  assert.strictEqual(deps.webkit_present('libgtk-3.so.0 (libc6,x86-64) => /lib/libgtk-3.so.0'), false);
+  assert.strictEqual(deps.webkit_present(''), false);
+
+  /* one package per distro family */
+  assert.strictEqual(deps.package_for('apt'), 'libwebkit2gtk-4.1-0');
+  assert.strictEqual(deps.package_for('dnf'), 'webkit2gtk4.1');
+  assert.strictEqual(deps.package_for('pacman'), 'webkit2gtk-4.1');
+  assert.strictEqual(deps.package_for('zypper'), 'libwebkit2gtk-4_1-0');
+
+  /* detection picks the first manager present, and admits when none is */
+  assert.strictEqual(deps.detect_manager(() => false), null);
+  assert.strictEqual(deps.detect_manager((bin) => bin === '/usr/bin/pacman'), 'pacman');
+  assert.strictEqual(deps.detect_manager((bin) => bin === '/usr/bin/apt-get'), 'apt');
+
+  /* and the fallback message always names something actionable */
+  assert.match(deps.webkit_manual_hint(null, 'webkit2gtk 4.1'), /no supported package manager/);
+  assert.match(deps.webkit_manual_hint('apt', 'libwebkit2gtk-4.1-0'), /apt-get install/);
+
+  /* wired into startup, before any window exists */
+  const main = read_source('src', 'main.ts');
+  assert.ok(main.includes('ensure_linux_webview_deps'), 'main checks the runtime first');
+});
+
 test('forge31 interleaves provider fallbacks', () => {
   const attempts = Forge3Session._draft_attempts([
     'x-ai/grok-4.6',

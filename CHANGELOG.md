@@ -8,6 +8,10 @@
   shell runs PowerShell/cmd on Windows and sh elsewhere, the drive picker
   lists filesystem roots per platform, and the shell tests use the platform
   shell — the whole tree, code and tests, is tri-platform now.
+- **Linux installs its own WebKitGTK.** The binary checks for the 4.1 runtime
+  at startup and installs it via apt, dnf, pacman or zypper — the system auth
+  dialog approves it, nothing happens silently. Without a supported manager it
+  prints manual instructions instead of dying in the native binding.
 - **Cohere joins the providers.** Command A, Command R+ and Command R through
   Cohere's OpenAI-compatible endpoint, with a key row, picker entries and a
   cascade like every other paid provider.

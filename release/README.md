@@ -51,4 +51,7 @@ Actions (SEA cannot cross-build):
 
 With no `--target` the packer builds for its own host. macOS binaries are
 ad-hoc signed (Gatekeeper still asks on first download — that needs a paid
-Developer ID). Linux needs a WebKitGTK runtime on the target machine.
+Developer ID). On first launch the Linux binary checks for the WebKitGTK 4.1
+runtime and installs it through the distro package manager (apt, dnf, pacman
+or zypper — the system asks for permission first); without a supported
+manager it prints manual instructions instead of linker-crashing.

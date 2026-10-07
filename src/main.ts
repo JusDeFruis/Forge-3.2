@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { Application } from '@webviewjs/webview';
 
 import { Api } from './bridge';
+import { ensure_linux_webview_deps } from './core/linuxDeps';
 import { restrictPrivateFile } from './core/secretFiles';
 import { default_data_dir } from './paths';
 
@@ -153,6 +154,10 @@ function ensure_webview_data_dir(): void {
 
 function main(): void {
   const dev = dev_mode();
+  /* On Linux the webview binding needs the distro WebKitGTK at runtime.
+     Install it (with the system auth dialog) before opening anything, or
+     exit with instructions instead of a linker crash. */
+  if (!ensure_linux_webview_deps()) process.exit(3);
   resolve_shell();
 
   const api = new Api();
