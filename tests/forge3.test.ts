@@ -617,18 +617,23 @@ test('overlay stays in forge dir', async () => {
 });
 
 test('the data folder is Forge-3.2 and inherits the 3.1 install', async () => {
-  /* the real roaming folder must not be touched by the suite */
-  const roaming = process.env['APPDATA'];
-  const previous_roaming = roaming;
+  /* the real roaming folder must not be touched by the suite — and outside
+     Windows APPDATA is ignored entirely, so XDG_CONFIG_HOME is sandboxed too.
+     Without that, default_data_dir() pointed at the runner's real home. */
+  const previous_roaming = process.env['APPDATA'];
+  const previous_xdg = process.env['XDG_CONFIG_HOME'];
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'forge3-roaming-'));
   process.env['APPDATA'] = sandbox;
+  process.env['XDG_CONFIG_HOME'] = sandbox;
   try {
+    const want = process.platform === 'win32' ? '/Forge-3.2' : '/forge-3.2';
     assert.ok(
-      paths.default_data_dir().replaceAll('\\', '/').endsWith('/Forge-3.2'),
-      'the app now lives in Forge-3.2',
+      paths.default_data_dir().replaceAll('\\', '/').endsWith(want),
+      'the app now lives in its versioned folder',
     );
-    /* an existing 3.1 install (chats, keys, config) is carried over */
-    const old = path.join(sandbox, 'Forge-3.1');
+    /* an existing 3.1 install (chats, keys, config) is carried over — at the
+       location legacy_dirs() actually reads, not a hardcoded name */
+    const old = paths.default_data_dir('3.1');
     fs.mkdirSync(path.join(old, 'chats'), { recursive: true });
     fs.mkdirSync(path.join(old, 'keys'), { recursive: true });
     fs.writeFileSync(path.join(old, 'config.json'), '{"draft_backend": "nvidia"}\n', 'utf8');
@@ -657,6 +662,8 @@ test('the data folder is Forge-3.2 and inherits the 3.1 install', async () => {
   } finally {
     if (previous_roaming === undefined) delete process.env['APPDATA'];
     else process.env['APPDATA'] = previous_roaming;
+    if (previous_xdg === undefined) delete process.env['XDG_CONFIG_HOME'];
+    else process.env['XDG_CONFIG_HOME'] = previous_xdg;
     delete process.env['FORGE3_DIR'];
   }
 });
@@ -3258,10 +3265,14 @@ test('deleting a chat deletes the files it produced', async () => {
 
 test('the 3.2 data folder imports everything a 3.1 install left behind', async () => {
   const previous_roaming = process.env['APPDATA'];
+  const previous_xdg = process.env['XDG_CONFIG_HOME'];
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'forge3-import-'));
   process.env['APPDATA'] = sandbox;
+  process.env['XDG_CONFIG_HOME'] = sandbox;
   try {
-    const old = path.join(sandbox, 'Forge-3.1');
+    /* same rule as above: the old install lives where legacy_dirs() looks,
+       which is lowercase outside Windows */
+    const old = paths.default_data_dir('3.1');
     fs.mkdirSync(path.join(old, 'chats'), { recursive: true });
     fs.mkdirSync(path.join(old, 'keys'), { recursive: true });
     fs.mkdirSync(path.join(old, 'sandbox', 'oldsession'), { recursive: true });
@@ -3292,6 +3303,8 @@ test('the 3.2 data folder imports everything a 3.1 install left behind', async (
   } finally {
     if (previous_roaming === undefined) delete process.env['APPDATA'];
     else process.env['APPDATA'] = previous_roaming;
+    if (previous_xdg === undefined) delete process.env['XDG_CONFIG_HOME'];
+    else process.env['XDG_CONFIG_HOME'] = previous_xdg;
   }
   const paths_src = read_source('src', 'paths.ts');
   assert.ok(
