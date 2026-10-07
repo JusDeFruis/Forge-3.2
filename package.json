@@ -11,7 +11,8 @@
     "start": "node dist/main.js",
     "dev": "node build.mjs && node dist/main.js",
     "test": "node build.mjs && tsc --noEmit && node --test \"dist/tests/*.test.js\"",
-    "pack:exe": "node packaging/sea/pack-exe.mjs"
+    "pack:exe": "node packaging/sea/pack-exe.mjs",
+    "pack:bin": "node packaging/sea/pack.mjs"
   },
   "engines": {
     "node": ">=20"

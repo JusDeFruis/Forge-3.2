@@ -144,10 +144,17 @@ test('forge bridge is not lites', () => {
 });
 
 test('the shipped window and the shell stay console-free', () => {
-  const pack = read_source('packaging', 'sea', 'pack-exe.mjs');
+  const pack = read_source('packaging', 'sea', 'pack.mjs');
   assert.ok(pack.includes('function set_gui_subsystem'));
   assert.ok(pack.includes('next.writeUInt16LE(2, 0)'));
   assert.ok(pack.includes('subsystem_offset = pe_offset + 4 + 20 + 68'));
+  /* one packer, every desktop OS: the target table names all four binaries */
+  for (const target of ['win32-x64', 'linux-x64', 'darwin-arm64', 'darwin-x64']) {
+    assert.ok(pack.includes(`'${target}'`), `pack.mjs knows ${target}`);
+  }
+  assert.ok(pack.includes("codesign', ['--force', '-s', '-'"), 'macOS binaries are ad-hoc signed');
+  const wrapper = read_source('packaging', 'sea', 'pack-exe.mjs');
+  assert.ok(wrapper.includes('--target=win32-x64'), 'pack:exe still builds Windows');
   const shell = read_source('src', 'agent', 'shell.ts');
   assert.ok(shell.includes('windowsHide: true'));
   assert.ok(shell.includes("'-WindowStyle', 'Hidden'"));

@@ -24,9 +24,28 @@ export interface ShellOptions {
 const clamp = (value: number, minimum: number, maximum: number): number =>
   Math.min(maximum, Math.max(minimum, Math.trunc(value)));
 
+/** The shells Forge can run agent commands in. Windows keeps cmd and
+    PowerShell; everywhere else the POSIX shell is used, so the same
+    run_command works on Linux and macOS without a Windows binary. */
+export type ShellKind = 'cmd' | 'powershell' | 'sh';
+
+export function default_shell(): ShellKind {
+  return process.platform === 'win32' ? 'powershell' : 'sh';
+}
+
+function resolve_shell(raw: unknown): ShellKind {
+  const want = String(raw ?? '').trim().toLowerCase();
+  if (want.startsWith('cmd')) return process.platform === 'win32' ? 'cmd' : 'sh';
+  if (want.startsWith('powershell') || want === 'pwsh') return process.platform === 'win32' ? 'powershell' : 'sh';
+  if (want === 'sh' || want === 'bash' || want === 'zsh' || want === 'fish') {
+    return process.platform === 'win32' ? 'powershell' : 'sh';
+  }
+  return default_shell();
+}
+
 export function run_command(command: string, options: ShellOptions): Promise<ShellResult> {
   const body = String(command ?? '').trim();
-  const kind = String(options.shell ?? '').toLowerCase().startsWith('cmd') ? 'cmd' : 'powershell';
+  const kind = resolve_shell(options.shell);
   /* the silence allowed before a command is called hung. Generous on purpose:
      an npm install or a full tsc can go quiet for minutes while it works, and
      the old fixed 60s wall-clock limit killed those mid-build. */
@@ -48,11 +67,13 @@ const timeout = clamp(Number(options.timeout_ms ?? 300000), 1000, 1800000);
     return Promise.resolve(finish({ ok: false, stderr: 'command is empty' }));
   }
 
-  const bin = kind === 'cmd' ? 'cmd.exe' : 'powershell.exe';
+  const bin = kind === 'cmd' ? 'cmd.exe' : kind === 'powershell' ? 'powershell.exe' : '/bin/sh';
   const args =
     kind === 'cmd'
       ? ['/d', '/s', '/c', body]
-      : ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-Command', body];
+      : kind === 'powershell'
+        ? ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-Command', body]
+        : ['-c', body];
 
   return new Promise((resolve) => {
     let child;

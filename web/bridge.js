@@ -56,7 +56,7 @@
     'model_choices', 'probe_opencode', 'pin_model', 'backend_catalog', 'update_config',
     'save_key', 'delete_key', 'connect_gateway', 'disconnect_gateway',
     'minimize', 'toggle_maximize', 'close', 'drag_by',
-    'browse_workspace', 'pick_folder_native'
+    'browse_workspace'
   ];
 
   const api = {};

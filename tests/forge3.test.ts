@@ -1087,7 +1087,9 @@ test('agent workspace tools never leave the folder', async () => {
     assert.ok(/^\s*1\| export const one/m.test(read.text));
     assert.ok(workspace!.list('.').some((entry) => entry.name === 'src' && entry.kind === 'dir'));
     assert.throws(() => workspace!.resolve('../secret.txt'), /escapes the workspace/);
-    assert.throws(() => workspace!.resolve('C:\\Windows\\system.ini'), /escapes the workspace/);
+    /* an absolute path outside the root, in the platform's own spelling */
+    const outside = process.platform === 'win32' ? 'C:\\Windows\\system.ini' : '/etc/passwd';
+    assert.throws(() => workspace!.resolve(outside), /escapes the workspace/);
     workspace!.write('src/new.ts', 'export const three = 3;\n');
     assert.ok(fs.existsSync(path.join(root, 'src', 'new.ts')));
     assert.match(workspace!.replace('src/new.ts', 'three = 3', 'three = 4'), /replaced 1/);
@@ -1550,7 +1552,7 @@ test('projects hold the folder and the plain chat dialog is gone', () => {
   assert.ok(app.includes('chatInProject'));
 
   const bridge_js = read_source('web', 'bridge.js');
-  for (const method of ['create_project', 'remove_project', 'approve_tool', 'answer_ask_user', 'read_delivery', 'browse_workspace', 'pick_folder_native']) {
+  for (const method of ['create_project', 'remove_project', 'approve_tool', 'answer_ask_user', 'read_delivery', 'browse_workspace']) {
     assert.ok(bridge_js.includes(`'${method}'`), `bridge.js must whitelist ${method}`);
   }
 
@@ -1571,7 +1573,7 @@ test('projects hold the folder and the plain chat dialog is gone', () => {
 
   const bridge_source = read_source('src', 'bridge.ts');
   assert.ok(bridge_source.includes('browse_workspace'));
-  assert.ok(bridge_source.includes('pick_folder_native'));
+  assert.ok(!bridge_source.includes('pick_folder_native'), 'the dead PowerShell-only picker is gone');
   assert.ok(bridge_source.includes('create_project'));
   assert.ok(bridge_source.includes('approve_tool'));
   assert.ok(bridge_source.includes('answer_ask_user'));
@@ -2985,18 +2987,25 @@ test('a long shell command is judged by its silence, not by a clock', async () =
   await with_isolated_dir(async () => {
     const root = path.join(LOAD_DIR, 'shell');
     fs.mkdirSync(root, { recursive: true });
+    /* the same commands in the platform shell, so this test runs on
+       Windows, Linux and macOS alike */
+    const win = process.platform === 'win32';
+    const tick = win
+      ? '$i = 0; 1..8 | ForEach-Object { $i++; Start-Sleep -Milliseconds 350; Write-Output "tick $i" }'
+      : 'for i in 1 2 3 4 5 6 7 8; do sleep 0.35; echo "tick $i"; done';
+    const sleep20 = win ? 'Start-Sleep -Seconds 20' : 'sleep 20';
+    const many = win
+      ? '1..3000 | ForEach-Object { Write-Output ("line " + $_) }'
+      : 'i=1; while [ $i -le 3000 ]; do echo "line $i"; i=$((i+1)); done';
 
     /* a command that prints steadily for well past the old limit finishes */
-    const slow = await run_command(
-      '$i = 0; 1..8 | ForEach-Object { $i++; Start-Sleep -Milliseconds 350; Write-Output "tick $i" }',
-      { cwd: root, timeout_ms: 1000 },
-    );
+    const slow = await run_command(tick, { cwd: root, timeout_ms: 1000 });
     assert.strictEqual(slow.timed_out, false, 'a command that keeps printing is never cut off');
     assert.strictEqual(slow.code, 0);
     assert.match(slow.stdout, /tick 8/, 'and it ran to the end');
 
     /* one that says nothing at all is stopped, and says why */
-    const silent = await run_command('Start-Sleep -Seconds 20', {
+    const silent = await run_command(sleep20, {
       cwd: root,
       timeout_ms: 1500,
     });
@@ -3004,10 +3013,7 @@ test('a long shell command is judged by its silence, not by a clock', async () =
     assert.match(silent.stderr, /no output for 2s/, 'and the reason is in words');
 
     /* output over the cap no longer kills a working command */
-    const loud = await run_command(
-      '1..3000 | ForEach-Object { Write-Output ("line " + $_) }',
-      { cwd: root, max_output: 2000, timeout_ms: 60000 },
-    );
+    const loud = await run_command(many, { cwd: root, max_output: 2000, timeout_ms: 60000 });
     assert.strictEqual(loud.truncated, true, 'the reply is capped');
     assert.strictEqual(loud.timed_out, false, 'and the command was not killed for it');
     assert.strictEqual(loud.code, 0, 'it still ran to completion');

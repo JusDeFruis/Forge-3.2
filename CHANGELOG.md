@@ -2,6 +2,12 @@
 
 ## Forge 3.2
 
+- **Linux and macOS builds join Windows.** One SEA packer builds all four
+  binaries natively on GitHub Actions (Windows x64, Linux x64, macOS arm64
+  and x64); macOS binaries are ad-hoc signed after injection. The agent
+  shell runs PowerShell/cmd on Windows and sh elsewhere, the drive picker
+  lists filesystem roots per platform, and the shell tests use the platform
+  shell — the whole tree, code and tests, is tri-platform now.
 - **Cohere joins the providers.** Command A, Command R+ and Command R through
   Cohere's OpenAI-compatible endpoint, with a key row, picker entries and a
   cascade like every other paid provider.

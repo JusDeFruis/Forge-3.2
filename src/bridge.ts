@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 import type { BrowserWindow, Webview } from '@webviewjs/webview';
 
@@ -240,28 +239,6 @@ export class Api {
     };
   }
 
-  pick_folder_native(): Record<string, any> {
-    try {
-      const script = `
-        Add-Type -AssemblyName System.Runtime.WindowsRuntime
-        $picker = [Windows.Storage.Pickers.FolderPicker]::new()
-        $picker.SuggestedStartLocation = [Windows.Storage.Pickers.PickerLocationId]::Desktop
-        $picker.FileTypeFilter.Add("*")
-        $folder = $picker.PickSingleFolderAsync().GetAwaiter().GetResult()
-        if ($folder) { Write-Output $folder.Path }
-      `;
-      const res = spawnSync('powershell', ['-ExecutionPolicy', 'Bypass', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', script], { encoding: 'utf8', windowsHide: true });
-      if (res.error) return { ok: false, error: res.error.message };
-      const out = (res.stdout ?? '').trim();
-      if (!out) return { ok: false, error: 'cancelled' };
-      const stat = fs.statSync(out);
-      if (!stat.isDirectory()) return { ok: false, error: 'not a folder' };
-      return { ok: true, path: out };
-    } catch (err) {
-      return { ok: false, error: err instanceof Error ? err.message : String(err) };
-    }
-  }
-
   minimize(): Record<string, any> {
     if (this._window === null) return { ok: false, error: 'window is not ready' };
     this._window.setMinimized(true);
@@ -300,15 +277,20 @@ function _drive_roots(): Array<Record<string, string>> {
   if (home) {
     out.push({ name: `Home (${path.basename(home)})`, path: home });
   }
-  for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
-    const root = `${letter}:\\`;
-    try {
-      if (fs.statSync(root).isDirectory()) {
-        out.push({ name: root, path: root });
+  if (process.platform === 'win32') {
+    for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+      const root = `${letter}:\\`;
+      try {
+        if (fs.statSync(root).isDirectory()) {
+          out.push({ name: root, path: root });
+        }
+      } catch {
+        void 0;
       }
-    } catch {
-      void 0;
     }
+  } else if (home) {
+    /* one extra root beside home, so the picker is not a single row */
+    out.push({ name: 'Filesystem root (/)', path: '/' });
   }
   return out;
 }

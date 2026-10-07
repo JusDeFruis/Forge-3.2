@@ -1,0 +1,66 @@
+name: release
+
+# Cut a release by pushing a tag: `git tag v3.2.0 && git push forge32 v3.2.0`.
+# Each runner builds its binary natively (SEA cannot cross-build), then the
+# publish job attaches all four to one GitHub Release.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win32-x64
+            asset: release/Forge-3.2-windows-x64.exe
+          - os: ubuntu-latest
+            target: linux-x64
+            asset: release/Forge-3.2-linux-x64
+          - os: macos-14
+            target: darwin-arm64
+            asset: release/Forge-3.2-macos-arm64
+          - os: macos-15-intel
+            target: darwin-x64
+            asset: release/Forge-3.2-macos-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+      - run: npm run pack:bin -- --target=${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ matrix.asset }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - run: |
+          ls -la artifacts
+          TAG="${GITHUB_REF_NAME}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG exists — uploading assets"
+          else
+            gh release create "$TAG" --title "Forge ${TAG#v}" --notes "See CHANGELOG.md"
+          fi
+          gh release upload "$TAG" artifacts/* --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

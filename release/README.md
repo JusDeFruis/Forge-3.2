@@ -39,6 +39,16 @@ gh release create v3.2 release/Forge-3.2-windows-x64.exe \
   --title "Forge 3.2" --notes "See CHANGELOG.md"
 ```
 
-The only release artifact this tree produces is `Forge-3.2-windows-x64.exe`.
-Linux and macOS run from source (`npm run build && node dist/main.js`); there
-are no single-file packagers for those platforms here.
+Four single-file artifacts, one per platform, all built natively on GitHub
+Actions (SEA cannot cross-build):
+
+| Runner | Command | Output |
+|---|---|---|
+| Windows x64 | `npm run pack:exe` | `Forge-3.2-windows-x64.exe` |
+| Linux x64 | `npm run pack:bin -- --target=linux-x64` | `Forge-3.2-linux-x64` |
+| macOS arm64 | `npm run pack:bin -- --target=darwin-arm64` | `Forge-3.2-macos-arm64` |
+| macOS x64 | `npm run pack:bin -- --target=darwin-x64` | `Forge-3.2-macos-x64` |
+
+With no `--target` the packer builds for its own host. macOS binaries are
+ad-hoc signed (Gatekeeper still asks on first download — that needs a paid
+Developer ID). Linux needs a WebKitGTK runtime on the target machine.

@@ -2,7 +2,7 @@ import type { ForgeConfig, ToolDef } from '../core/types';
 import { httpRequest } from '../core/httpTransport';
 
 import { Workspace } from './workspace';
-import { run_command, SHELL_SILENCE_MS } from './shell';
+import { default_shell, run_command, SHELL_SILENCE_MS } from './shell';
 import { fetch_page } from './webfetch';
 
 /** How long a command may stay silent before the agent gives up on it.
@@ -98,7 +98,8 @@ const FS_TOOLS: ToolDef[] = [
 const SHELL_TOOL: ToolDef = {
   name: 'run_command',
   description:
-    'Run a shell command inside the workspace folder (Windows). stdout and stderr are returned. ' +
+    'Run a shell command inside the workspace folder (PowerShell on Windows, sh elsewhere). ' +
+    'stdout and stderr are returned. ' +
     'A command that keeps printing is never cut off, however long it runs: only one that stays silent ' +
     'for 5 minutes is stopped as hung. Long output is truncated but the command still runs to the end. ' +
     'For a build that takes longer than that, start it in the background and poll its log.',
@@ -106,7 +107,7 @@ const SHELL_TOOL: ToolDef = {
     type: 'object',
     properties: {
       command: { type: 'string', description: 'The command line to run.' },
-      shell: { type: 'string', enum: ['powershell', 'cmd'], description: 'Shell to use. Defaults to powershell.' },
+      shell: { type: 'string', enum: ['powershell', 'cmd', 'sh'], description: 'Shell to use. Defaults to the platform shell.' },
     },
     required: ['command'],
     additionalProperties: false,
@@ -348,7 +349,7 @@ export async function run_tool(name: string, raw_args: unknown, ctx: AgentContex
         if (refused) return refused;
         const result = await run_command(command, {
           cwd: ctx.workspace.root,
-          shell: str(args['shell']) || 'powershell',
+          shell: str(args['shell']) || default_shell(),
           timeout_ms: shell_timeout(ctx.config),
           signal: ctx.signal,
         });
