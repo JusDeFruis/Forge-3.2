@@ -1226,7 +1226,7 @@ export class ForgeSessionBase {
     slot.last_reply = block;
     const filename = `forge-draft-v${version}-${Math.floor(Date.now() / 1000)}.txt`;
     const full = path.join(this._saved_dir(), filename);
-    fs.writeFileSync(full, block, 'utf8');
+    writePrivateFile(full, block);
     this._emit('complete', 'forge', {
       text: block,
       usage: this._apply_usage('forge', client),
@@ -1360,7 +1360,7 @@ export class ForgeSessionBase {
     for (const version of report.versions) {
       const filename = `forge-draft-anvil-${run_id}-v${version.version}.txt`;
       const full = path.join(this._saved_dir(), filename);
-      fs.writeFileSync(full, version.prompt, 'utf8');
+      writePrivateFile(full, version.prompt);
       files.push(filename);
     }
     const best = report.best;
@@ -1794,8 +1794,11 @@ export class ForgeSessionBase {
     return {
       workspace: this._session_workspace,
       project_id: this._session_project,
-      agent_shell: this._session_agent_shell,
-      agent_web: this._session_agent_web,
+      /* An "always allow" is a live-session grant, not a stored permission:
+         reloading the chat must ask again. Persisting it would let a click
+         from last week auto-approve shell commands on a fresh launch. */
+      agent_shell: false,
+      agent_web: false,
       chat: [...this._chat_history],
       draft: [...this._draft_history],
       anvil: [...this._anvil_history],

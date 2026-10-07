@@ -27,9 +27,8 @@ Launch with `forge.bat` on Windows or `./forge.sh` on Linux and macOS.
   delivered-files bundle (deflate + CRC32 + central directory)
 - `src/core/` — shared provider, vault, history, transport, and drafting primitives
 - `tests/` — `node:test` suite; it also asserts HTML element ids, the
-  bridge-method parity, and security invariants. **Local only:** the folder is
-  gitignored and lives on the maintainer's machine, so `npm test` needs it
-  present locally while a fresh clone still builds and runs.
+  bridge-method parity, and security invariants. The folder ships in the
+  repository, so a fresh clone runs `npm test` with no extra setup.
 - `build.mjs` — esbuild bundle for `dist/` (Node shell, web shell, tests)
 
 Runtime data belongs under `%APPDATA%\Forge-3.2` on Windows,

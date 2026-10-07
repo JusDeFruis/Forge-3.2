@@ -157,7 +157,7 @@
       </form>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </main>
 </div>
 
@@ -630,7 +630,7 @@
     <pre class="permit" id="permitDetail"></pre>
     <div class="cardrow">
       <button type="button" id="permitOnce">Allow once</button>
-      <button type="button" id="permitAlways">Always allow</button>
+      <button type="button" id="permitAlways" title="For this chat only — reloading the chat asks again">Always in this chat</button>
       <button type="button" id="permitDeny">Deny</button>
     </div>
   </div>

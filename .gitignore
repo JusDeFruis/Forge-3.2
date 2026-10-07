@@ -20,7 +20,3 @@ history.key
 
 # a local id left by an external tool, not part of Forge
 .freebuff/
-
-# the test suite stays on this machine: it is a development harness, not part
-# of the shipped app, and the files are kept on disk untracked
-tests/

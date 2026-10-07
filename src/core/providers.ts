@@ -1554,6 +1554,25 @@ export class OpenAICompatClient extends Client {
   }
 
   async *stream(model: string, system: string | null, messages: ChatMessage[], max_tokens = 4000, temperature = 0.9, json_mode = false, top_p = 1, tools: ToolDef[] | null = null, signal?: AbortSignal, effort: string = 'medium', onActivity?: () => void): AsyncIterable<string> {
+    /* A Zen model documented on /responses is translated there instead of
+       being sent to /chat/completions, where it is refused whatever the
+       credential. The readings are copied back so usage, finish and reasoning
+       behave exactly like a normal stream. */
+    if (this._base_url.replace(/\/+$/, '') === opencodeAuth.ZEN_BASE_URL &&
+        opencodeAuth.endpoint_for(model) === 'responses') {
+      const zen = new ZenResponsesClient(this._key, this._verify);
+      zen.on_reasoning = this.on_reasoning;
+      yield* zen.stream(model, system, messages, max_tokens, temperature, json_mode, top_p, tools, signal, effort, onActivity);
+      this._last_usage = zen.last_usage();
+      const finish = zen.last_finish_reason();
+      if (finish) this._last_finish_reason = finish;
+      const hidden_text = zen.last_reasoning_content();
+      if (hidden_text) this._hidden_text = hidden_text;
+      for (const call of zen.last_tool_calls()) this._note_tool_call(this._last_tool_calls.length, call.id, call.name, call.arguments);
+      const refusal = zen.last_refusal();
+      if (refusal) this._last_refusal = refusal;
+      return;
+    }
     this._last_usage = null;
     this._last_finish_reason = null;
     this._hidden_text = '';
@@ -1910,6 +1929,111 @@ export class CodexClient extends Client {
 
   override async list_models(): Promise<string[]> {
     return [...CODEX_MODELS];
+  }
+}
+
+/** A Zen model served on the Responses endpoint (`muse-spark-*-contributor-free`
+    today). The endpoint belongs to the model — sending it to /chat/completions
+    is a refusal whatever the credential — so the request is translated once,
+    here, instead of in every caller. Reuses the generic Responses helpers
+    from codexClient; only the URL, key and error words are Zen's. */
+export class ZenResponsesClient extends Client {
+  private readonly _key: string;
+  private readonly _verify: boolean;
+
+  constructor(key: string, verify = true) {
+    super();
+    this._key = key;
+    this._verify = verify;
+  }
+
+  async *stream(model: string, system: string | null, messages: ChatMessage[], max_tokens = 4000, temperature = 0.9, json_mode = false, top_p = 1, tools: ToolDef[] | null = null, signal?: AbortSignal, effort: string = 'medium', onActivity?: () => void): AsyncIterable<string> {
+    void temperature;
+    void json_mode;
+    void top_p;
+    void tools;
+    void effort;
+    this._last_usage = null;
+    this._last_finish_reason = null;
+    this._hidden_text = '';
+    this._last_refusal = '';
+    this._reset_tools();
+    const hidden: string[] = [];
+    const body: Record<string, any> = {
+      model,
+      instructions: String(system ?? ''),
+      input: to_input([...(messages ?? [])]),
+      stream: true,
+      store: false,
+      max_output_tokens: Math.max(1, Math.trunc(Number(max_tokens) || 4000)),
+    };
+    if (!body['input'].length) {
+      body['input'] = [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: ' ' }] }];
+    }
+    const url = `${opencodeAuth.ZEN_BASE_URL.replace(/\/+$/, '')}/responses`;
+    const response = await httpRequest(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this._key}`,
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        ..._EXTRA,
+      },
+      body,
+      verify: this._verify,
+      signal,
+      onActivity,
+    });
+    if (response.status === 401) {
+      throw new Error('the Zen credential was not accepted');
+    }
+    if (response.status >= 400) {
+      const raw = await response.text();
+      const detail = safe_error_detail(raw);
+      const suffix = detail ? ` ${detail}` : '';
+      throw new Error(`Zen request failed (HTTP ${response.status}).${suffix}`);
+    }
+    try {
+      for await (const raw of response.events()) {
+        let payload: Record<string, any>;
+        try {
+          payload = JSON.parse(raw);
+        } catch {
+          continue;
+        }
+        if (!payload || typeof payload !== 'object') continue;
+        const kind = String(payload['type'] ?? '');
+        if (kind === 'response.failed' || kind === 'error') {
+          const detail = safe_error_detail(payload);
+          const suffix = detail ? ` ${detail}` : '';
+          throw new Error(`Zen request failed.${suffix}`);
+        }
+        const piece = delta_text(payload);
+        if (piece) yield piece;
+        const hid = hidden_text(payload);
+        if (hid) hidden.push(hid);
+        if (kind === 'response.completed') {
+          let usage: any = null;
+          const nested = payload['response'];
+          if (nested && typeof nested === 'object' && !Array.isArray(nested)) usage = nested['usage'];
+          if (!usage || typeof usage !== 'object' || Array.isArray(usage)) usage = payload['usage'];
+          if (usage && typeof usage === 'object' && !Array.isArray(usage)) {
+            this._last_usage = {
+              input_tokens: Math.trunc(Number(usage['input_tokens'] ?? 0)),
+              output_tokens: Math.trunc(Number(usage['output_tokens'] ?? 0)),
+              cache_read_input_tokens: Math.trunc(Number(usage['cache_read_input_tokens'] ?? 0)),
+            };
+          }
+          this._last_finish_reason = 'stop';
+        }
+      }
+    } finally {
+      this._hidden_text = hidden.join('');
+    }
+  }
+
+  override async list_models(): Promise<string[]> {
+    return [...BACKENDS['opencode'].models];
   }
 }
 

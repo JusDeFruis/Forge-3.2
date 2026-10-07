@@ -570,12 +570,13 @@ interface EventPayload {
     button.innerHTML =
       `<span class="thinkico">${ICONS.spark}</span>` +
       '<span class="thinktext">Think</span>' +
+      `<span class="thinkmeterwrap" role="meter" aria-label="Reasoning effort" aria-valuemin="0" aria-valuemax="4" aria-valuenow="${THINK_LEVELS.indexOf(level)}" aria-valuetext="${thinkLabel(level)}">` +
       thinkMeter(level) +
+      `</span>` +
       `<span class="thinklevel">${thinkLabel(level)}</span>`;
     button.classList.toggle('off', level === 'off');
     const label = 'Think · ' + thinkLabel(level);
-    button.setAttribute('aria-label', label);
-    button.setAttribute('aria-valuetext', label);
+    button.setAttribute('aria-label', label + ' — activate to cycle the level');
     button.title =
       label + ' — click to cycle. Each model family maps it to its ' +
       'own control: token budget, effort level, or thinking level';
@@ -2194,9 +2195,32 @@ interface EventPayload {
 
     const list = document.createElement('div');
     list.className = 'modellist';
+    list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-label', 'Models');
+
+    let cursor = -1;
+    const rows = (): HTMLElement[] =>
+      Array.from(list.querySelectorAll('.mrow')) as HTMLElement[];
+    const moveCursor = (delta: number): void => {
+      const items = rows();
+      if (!items.length) return;
+      cursor = (cursor + delta + items.length) % items.length;
+      items.forEach((row, index) => {
+        const on = index === cursor;
+        row.classList.toggle('cursor', on);
+        row.setAttribute('aria-selected', on ? 'true' : 'false');
+        if (on) row.scrollIntoView({ block: 'nearest' });
+      });
+    };
 
     const paint = () => {
+      cursor = -1;
       paintModelList(list, (search as HTMLInputElement).value.trim().toLowerCase(), false, 60, closePop);
+      list.querySelectorAll('.mrow').forEach((row) => {
+        row.setAttribute('role', 'option');
+        row.setAttribute('aria-selected', 'false');
+        (row as HTMLElement).tabIndex = -1;
+      });
     };
 
     const foot = document.createElement('div');
@@ -2216,6 +2240,22 @@ interface EventPayload {
     foot.appendChild(footLink);
 
     search.addEventListener('input', paint);
+    search.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        moveCursor(event.key === 'ArrowDown' ? 1 : -1);
+      } else if (event.key === 'Enter') {
+        const items = rows();
+        if (cursor >= 0 && cursor < items.length) {
+          event.preventDefault();
+          items[cursor].click();
+        }
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closePop();
+        chip.focus();
+      }
+    });
     pop.appendChild(search);
     pop.appendChild(list);
     pop.appendChild(foot);
@@ -3642,8 +3682,8 @@ interface EventPayload {
       kind === 'web' ? 'Open this web page?' : 'Run this command?';
     ($el('permitNote') as HTMLElement).textContent =
       kind === 'web'
-        ? 'FORGE wants to fetch a page. It stays outside your project folder.'
-        : 'FORGE wants to run a command in the project folder.';
+        ? 'FORGE wants to fetch a page. It stays outside your project folder. “Always” lasts for this chat only.'
+        : 'FORGE wants to run a command in the project folder. “Always” lasts for this chat only — review the command first.';
     ($el('permitDetail') as HTMLElement).textContent = String(payload.detail || '');
     permitModal.hidden = false;
     ($el('permitOnce') as HTMLButtonElement).focus();
@@ -3656,6 +3696,7 @@ interface EventPayload {
     if (!api || !id) return;
     api.approve_tool(id, decision).then((result: any) => {
       if (result && result.state) applyState(result.state);
+      if (decision === 'always') toast('allowed for this chat — a reloaded chat asks again');
     }, () => {});
   };
 
@@ -3764,6 +3805,39 @@ interface EventPayload {
     if (!target) return;
     event.preventDefault();
     target.click();
+  });
+
+  /* Focus never leaves an open dialog: Tab cycles inside the topmost one.
+     Without this a keyboard reader tabs out behind the modal backdrop. */
+  const FOCUSABLE = 'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+  const topModal = (): HTMLElement | null => {
+    for (const id of ['permitModal', 'askModal', 'projectModal', 'folderPickerModal', 'unlock', 'settings']) {
+      const node = $el(id) as HTMLElement | null;
+      if (node && !node.hidden) return node;
+    }
+    return null;
+  };
+  document.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.key !== 'Tab') return;
+    const modal = topModal();
+    if (!modal) return;
+    const items = Array.from(modal.querySelectorAll(FOCUSABLE)).filter((node) => {
+      const el = node as HTMLElement;
+      return el.offsetParent !== null || el === document.activeElement;
+    }) as HTMLElement[];
+    if (!items.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
 
   document.addEventListener('keydown', (event: KeyboardEvent) => {

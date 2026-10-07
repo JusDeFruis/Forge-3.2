@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { FORGE3_HOME } from './providers';
+import { writePrivateFile } from './secretFiles';
 import { resolveTheme } from './themes';
 import type { ForgeConfig } from './types';
 
@@ -258,8 +259,9 @@ export function load(): ForgeConfig {
 
 export function save(cfg: ForgeConfig): void {
   try {
-    fs.mkdirSync(FORGE3_HOME, { recursive: true });
-    fs.writeFileSync(_CONFIG, JSON.stringify(cfg, null, 2), 'utf8');
+    /* owner-only like every other local secret: the config carries provider
+       definitions and folder paths, and must never be world-readable */
+    writePrivateFile(_CONFIG, JSON.stringify(cfg, null, 2));
   } catch (error) {
     console.error('forge: failed to write config.json', error);
     throw error;

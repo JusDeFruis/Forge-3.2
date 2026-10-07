@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { Application } from '@webviewjs/webview';
 
 import { Api } from './bridge';
+import { restrictPrivateFile } from './core/secretFiles';
 import { default_data_dir } from './paths';
 
 const MIME: Record<string, string> = {
@@ -246,10 +247,10 @@ function main(): void {
       }
       try {
         fs.mkdirSync(default_data_dir(), { recursive: true });
-        fs.appendFileSync(
-          path.join(default_data_dir(), 'error.log'),
-          `${new Date().toISOString()} unhandled rejection: ${detail}\n`,
-        );
+        const log = path.join(default_data_dir(), 'error.log');
+        fs.appendFileSync(log, `${new Date().toISOString()} unhandled rejection: ${detail}\n`);
+        /* the log can carry provider error detail, so it stays owner-only */
+        restrictPrivateFile(log);
       } catch {
         /* best effort — the app keeps running */
       }

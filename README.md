@@ -54,9 +54,8 @@ Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
   list now includes `abliteration-abliterated-model-large-v2`
 - Qwen is offered from four providers: OpenRouter, OrcaRouter, DashScope and
   Venice
-- The `tests/` folder is no longer in this repository. It stays on the
-  maintainer's machine and is gitignored; a clone still builds and runs, only
-  `npm test` needs those files locally
+- The `tests/` folder ships in this repository: `npm test` rebuilds,
+  typechecks, and runs the full suite, including the security invariants
 - Bring your own provider: add any OpenAI- or Anthropic-shaped endpoint under
   Settings → API keys, including a self-hosted llama.cpp or vLLM box that needs
   no key. Its models join the picker and can be pinned like any other
@@ -120,7 +119,9 @@ Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
 ## Agent tools
 
 A tool-capable turn runs in a private per-session sandbox. Shell and web are
-always offered and ask for permission the first time they are used.
+always offered and ask for permission the first time they are used. “Always”
+means for the live chat only: reloading the chat asks again, and switching
+chats never carries an approval across.
 
 | Tool | What it does |
 |---|---|
@@ -184,8 +185,8 @@ For a source checkout, `forge.bat` installs the Node dependencies and builds the
 app on its first run, then starts the native window:
 
 ```bash
-git clone https://github.com/JusDeFruis/Forge-3.1-Test-TS.git
-cd Forge-3.1-Test-TS
+git clone https://github.com/JusDeFruis/Forge-3.2-.test.git
+cd Forge-3.2-.test
 ```
 
 Windows:
@@ -245,10 +246,10 @@ There is no CI workflow in this tree: run `npm test` on every platform you
 target before pushing — the suite builds, typechecks, and exercises the chat
 engine, the bridge allowlist, and the security invariants.
 
-**The `tests/` folder is not in this repository.** It is a local development
-harness, kept on the maintainer's machine and listed in `.gitignore`. Nothing
-in `src/`, `web/` or the build depends on it, so a clone builds and runs
-normally; only `npm test` needs those files present locally.
+The `tests/` folder ships in this repository. Nothing in `src/`, `web/` or the
+build depends on it at runtime, but `npm test` rebuilds, typechecks, and runs
+the full suite — including the security invariants — so run it before every
+release.
 
 ### Windows executable
 

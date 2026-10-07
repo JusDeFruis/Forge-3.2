@@ -2,6 +2,29 @@
 
 ## Forge 3.2
 
+- **“Always allow” no longer outlives the chat.** A shell/web approval used to
+  persist in the saved session, so a click from last week auto-approved new
+  commands after a reload. The grant now lives in the running session only;
+  reloading asks again. The button says “Always in this chat” and the dialog
+  states the scope before you click.
+- **Config, drafts and the error log are owner-only.** `config.json`, saved
+  drafts and `error.log` used default file permissions; they now go through
+  the same private-write path as keys and history.
+- **Zen `/responses` models are translated, not refused.** The probe knew
+  `muse-spark` lives on `/responses`, but every live request went to
+  `/chat/completions`. Those models now get a real Responses request.
+- **Dead pin-remap entries work again.** Nine `PIN_REMAP` keys joined backend
+  and model with a space while the lookup uses a separator, so they never
+  matched and old pins fell back to the default provider.
+- **403 joins the transient list in agent turns.** NVIDIA answers 403 for
+  transient per-key conditions; the agent path treated it as permanent and
+  failed the turn instead of cascading like plain chat already did.
+- **The picker is keyboard-operable.** Model rows are listbox options with
+  arrow-key navigation, Enter to pin and Escape to close.
+- **The Think meter and toasts are exposed to assistive tech.** The meter is a
+  real `meter` role with value text; toasts are a live region.
+- **The packager requires Node 24 up front.** The SEA bundle targets node24;
+  building under Node 20 failed late at blob injection instead of saying so.
 - **The Windows executable builds again.** The live OpenCode catalogue no longer
   blocks provider construction with top-level await, which the SEA/CJS bundle
   cannot compile; bootstrap waits for the catalogue before returning models.

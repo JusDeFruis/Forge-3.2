@@ -13,6 +13,7 @@ import * as persona from './core/persona';
 import * as vault from './core/vault';
 import type { ChatMessage, ModelChoice } from './core/types';
 import { EncryptedHistoryStore } from './history';
+import { writePrivateFile } from './core/secretFiles';
 import { forge_chats, forge_dir, history_secret, load_overlay, save_overlay } from './paths';
 import {
   COMPILE_LOCK,
@@ -614,10 +615,13 @@ export class Forge3Session extends ForgeSessionBase {
           this._emit('cancelled', 'forge', { files: this._sandbox_files(since) });
           return;
         }
-        /* transient: 503/429/502/504 or any error not classified permanent.
-           If there are more models in the cascade, try the next one. */
+        /* transient: 403/429/502/503/504 or any error not classified
+           permanent. 403 joins the list because NVIDIA answers it for
+           transient per-key conditions as often as for a refused key —
+           the same exception the plain-chat path already makes. If there
+           are more models in the cascade, try the next one. */
         const status = P._provider_status(last_error);
-        const is_transient = [429, 502, 503, 504].includes(status ?? -1) || !P.is_permanent_provider_error(last_error);
+        const is_transient = [403, 429, 502, 503, 504].includes(status ?? -1) || !P.is_permanent_provider_error(last_error);
         if (!is_transient || attempt >= models.length - 1) {
           this._plain_history.pop();
           const failure = last_error instanceof Error ? last_error : new Error('the chat turn failed');
@@ -1074,9 +1078,8 @@ export class Forge3Session extends ForgeSessionBase {
     const version = this._draft_version;
     slot.last_reply = shown;
     const saved = path.join(path.dirname(forge_chats()), 'saved');
-    fs.mkdirSync(saved, { recursive: true });
     const filename = `forge-3-draft-v${version}-${Math.floor(Date.now() / 1000)}.txt`;
-    fs.writeFileSync(path.join(saved, filename), block, 'utf8');
+    writePrivateFile(path.join(saved, filename), block);
     let usage_in = 0;
     let usage_out = 0;
     for (const value of usage_of.values()) {

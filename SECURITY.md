@@ -72,6 +72,10 @@ Model output, provider responses, and page content are treated as untrusted:
   temporary files with crypto-random names; each history file gets a fresh
   salt; the vault reads secrets with `Object.hasOwn`, so prototype keys cannot
   be used to reach them.
+- **Scoped approvals.** Shell and web ask before the first use in a chat.
+  “Always” lasts for the live chat only: reloading the chat asks again, and
+  approvals are never carried into another chat. Config, drafts, history and
+  the error log are written owner-only.
 - **No silent failures.** Unhandled promise rejections are appended to
   `error.log` in the data directory instead of disappearing.
 

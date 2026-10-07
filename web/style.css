@@ -2934,11 +2934,7 @@ body {
   background: linear-gradient(90deg, var(--signal-soft), color-mix(in srgb, var(--signal-soft) 30%, transparent));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal-edge) 55%, transparent);
 }
-.mrow .tag.nokey {
-  color: var(--dim);
-  border-color: var(--line);
-  background: transparent;
-}
+
 .pinned {
   box-shadow: var(--shadow-1), inset 0 1px 0 var(--sheen);
 }

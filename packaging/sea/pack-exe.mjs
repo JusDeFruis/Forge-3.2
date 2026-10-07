@@ -131,6 +131,12 @@ async function main() {
   if (process.platform !== 'win32' || process.arch !== 'x64') {
     fail('pack-exe.mjs targets Windows x64 only on this machine');
   }
+  /* The SEA bundle targets node24: an older runtime cannot generate it, and
+     failing late (at blob injection) wastes a full build. Say so up front. */
+  const major = Number(String(process.versions.node || '').split('.')[0]);
+  if (!Number.isFinite(major) || major < 24) {
+    fail(`pack-exe.mjs needs Node 24 or newer (running ${process.versions.node || 'unknown'})`);
+  }
   const web_files = ['index.html', 'style.css', 'bridge.js', 'app.js', 'forge-sword.svg'];
   for (const name of web_files) {
     if (!fs.existsSync(path.join(DIST, 'web', name))) {
