@@ -9,6 +9,9 @@ visible in the repository and its purpose is documented here.
 
 ## Build it yourself
 
+Packaging needs Node 24 or newer (the packer says so up front instead of
+failing late). Then:
+
 ```bash
 npm install
 npm test
@@ -36,5 +39,6 @@ gh release create v3.2 release/Forge-3.2-windows-x64.exe \
   --title "Forge 3.2" --notes "See CHANGELOG.md"
 ```
 
-Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
-`Forge-3.2-linux-x64`, `Forge-3.2-macos-arm64` and `Forge-3.2-macos-x64`.
+The only release artifact this tree produces is `Forge-3.2-windows-x64.exe`.
+Linux and macOS run from source (`npm run build && node dist/main.js`); there
+are no single-file packagers for those platforms here.

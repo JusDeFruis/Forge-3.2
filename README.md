@@ -23,8 +23,8 @@ Prebuilt binaries are not committed to the repository — build them locally:
 | Windows x64, single file | `npm run pack:exe` | `release/Forge-3.2-windows-x64.exe` |
 | Any platform, from source | `npm run build && node dist/main.js` | — |
 
-Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
-`Forge-3.2-linux-x64`, `Forge-3.2-macos-arm64`, and `Forge-3.2-macos-x64`.
+The single-file release artifact is `Forge-3.2-windows-x64.exe`. Other
+platforms run from source with `npm run build && node dist/main.js`.
 
 ## What changed in 3.2
 
@@ -114,6 +114,12 @@ Release artifacts keep the names `Forge-3.2-windows-x64.exe`,
   `show all` toggle — and every block carries a download button
 - Per-model reply budgets: the provider is asked first, the family table is the
   fallback, and stale `chat_max_tokens` is retired
+- Closing the window holds the close, settles running turns, saves the
+  conversation, and only then exits — an immediate close no longer drops the ending
+- The agent remembers what it read: each turn records file shapes per folder,
+  so the next turn reuses that instead of re-reading the whole workspace
+- Long shell commands are judged by silence, not a fixed clock: output re-arms
+  the watchdog, and over-long output is truncated while the command runs on
 - Security and reliability hardening, see [SECURITY.md](SECURITY.md)
 
 ## Agent tools

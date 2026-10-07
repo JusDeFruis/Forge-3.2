@@ -22,6 +22,7 @@ Components used when building the Windows executable:
 
 - Node.js - MIT
 - rcedit 5.0.2 - MIT
+- postject 1.0.0-alpha.6 (fetched at pack time, not vendored) - MIT
 - Microsoft Edge WebView2 Runtime - provided by Microsoft under its own terms
 
 Model, provider, and product names referenced in Forge's catalog belong to

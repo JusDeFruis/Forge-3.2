@@ -72,14 +72,13 @@ test('windows launcher bootstraps or downloads', () => {
 
 test('readme lists forge32 release assets', () => {
   const readme = read_source('README.md');
-  for (const asset of [
-    'Forge-3.2-windows-x64.exe',
-    'Forge-3.2-linux-x64',
-    'Forge-3.2-macos-arm64',
-    'Forge-3.2-macos-x64',
-  ]) {
-    assert.ok(readme.includes(asset));
-  }
+  /* the only single-file artifact this tree produces is the Windows exe;
+     other platforms run from source, so the readme must not promise
+     linux/macOS binaries that do not exist */
+  assert.ok(readme.includes('Forge-3.2-windows-x64.exe'));
+  assert.ok(!readme.includes('Forge-3.2-linux-x64'));
+  assert.ok(!readme.includes('Forge-3.2-macos-arm64'));
+  assert.ok(!readme.includes('Forge-3.2-macos-x64'));
 });
 
 test('every screenshot the readme shows exists and is in english', () => {
