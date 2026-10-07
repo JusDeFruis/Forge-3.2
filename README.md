@@ -191,8 +191,8 @@ For a source checkout, `forge.bat` installs the Node dependencies and builds the
 app on its first run, then starts the native window:
 
 ```bash
-git clone https://github.com/JusDeFruis/Forge-3.2-.test.git
-cd Forge-3.2-.test
+git clone https://github.com/JusDeFruis/Forge-3.2.git
+cd Forge-3.2
 ```
 
 Windows:
