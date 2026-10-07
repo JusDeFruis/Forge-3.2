@@ -191,6 +191,81 @@ test('a Zen responses model is translated, not sent to chat completions', async 
   assert.ok(source.includes('delta_text(payload)'), 'Responses events are parsed back to text');
 });
 
+test('cohere joins the providers with a key and a picker row', async () => {
+  /* Qwen and Grok were already here under their maker names (DashScope, xAI).
+     Cohere was missing entirely: no backend, no key row, no picker entry. */
+  assert.ok(P.BACKENDS['cohere'], 'the backend exists');
+  assert.strictEqual(P.BACKENDS['cohere'].base_url, 'https://api.cohere.com/compatibility/v1');
+  assert.ok(has_slug(cheap_choices({}), 'cohere', 'command-a-03-2025'), 'the model reaches the picker');
+  assert.ok(has_slug(cheap_choices({}), 'cohere', 'command-r-plus-08-2024'), 'and so does its fallback');
+
+  /* a pasted key lands owner-only and the backend reads it back */
+  await with_isolated_dir(async () => {
+    const before = P.BACKENDS['cohere'].load_key();
+    assert.strictEqual(before, null, 'no key to start with');
+    P.BACKENDS['cohere'].save_key('cohere-test-key');
+    assert.strictEqual(P.BACKENDS['cohere'].load_key(), 'cohere-test-key', 'the key round-trips');
+    assert.strictEqual(P.BACKENDS['cohere'].has_key(), true);
+    P.BACKENDS['cohere'].delete_key();
+    assert.strictEqual(P.BACKENDS['cohere'].load_key(), null, 'removal works too');
+  });
+
+  /* the DashScope (Qwen) and xAI (Grok) key rows exist, so their keys are pastable */
+  const rows = P.model_choices({}).filter((c) => c.backend === 'dashscope' || c.backend === 'xai');
+  assert.ok(rows.some((c) => c.model.includes('qwen')), 'Qwen rows are offered');
+  assert.ok(rows.some((c) => c.model.toLowerCase().includes('grok')), 'Grok rows are offered');
+});
+
+test('a pasted Zen key unlocks the paid catalogue, and the probe still decides', async () => {
+  const zen = await import('../src/core/auth/opencodeAuth.js');
+  const backend = P.BACKENDS['opencode'];
+  const saved_models = [...backend.models];
+  const real_fetch = (globalThis as any).fetch;
+  const real_config = process.env['OPENCODE_CONFIG'];
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'forge-zen-paid-'));
+  process.env['OPENCODE_CONFIG'] = sandbox;
+
+  try {
+    /* with no pasted key, only the free tier is offered */
+    assert.strictEqual(zen.has_stored(), false, 'nothing pasted yet');
+    zen.store_credential('z'.repeat(67));
+    assert.strictEqual(zen.has_stored(), true, 'the pasted key counts');
+
+    /* the paid catalogue is the live list minus the free ids */
+    (globalThis as any).fetch = async (url: unknown): Promise<any> => {
+      if (String(url).endsWith('/models')) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({ data: [{ id: 'space-bunny-free' }, { id: 'glm-5.3' }, { id: 'kimi-k3' }] }),
+        };
+      }
+      return { ok: false, status: 403, text: async () => '{"error":{"message":"denied"}}' };
+    };
+    const paid = await zen.catalog_paid();
+    assert.deepStrictEqual(paid, ['glm-5.3', 'kimi-k3'], 'paid means everything without the suffix');
+
+    /* and the probe hides paid models this account may not use */
+    (globalThis as any).fetch = async (_url: unknown, init?: { body?: unknown }): Promise<any> => {
+      const body = JSON.parse(String((init as any)?.body ?? '{}'));
+      if (body?.model === 'glm-5.3') return { ok: true, status: 200, text: async () => '{}' };
+      return { ok: false, status: 403, text: async () => '{"error":{"message":"Upstream request failed: Model access is disabled"}}' };
+    };
+    backend.models = ['glm-5.3', 'kimi-k3'];
+    await zen.probe_free_tier(['glm-5.3', 'kimi-k3']);
+    const choices = P.model_choices({});
+    assert.ok(has_slug(choices, 'opencode', 'glm-5.3'), 'the answering paid model stays');
+    assert.ok(!has_slug(choices, 'opencode', 'kimi-k3'), 'the refused paid model leaves');
+  } finally {
+    backend.models = saved_models;
+    if (real_fetch === undefined) delete (globalThis as any).fetch;
+    else (globalThis as any).fetch = real_fetch;
+    if (real_config === undefined) delete process.env['OPENCODE_CONFIG'];
+    else process.env['OPENCODE_CONFIG'] = real_config;
+    zen.clear_stored();
+    fs.rmSync(sandbox, { recursive: true, force: true });
+  }
+});
+
 test('forge31 interleaves provider fallbacks', () => {
   const attempts = Forge3Session._draft_attempts([
     'x-ai/grok-4.6',

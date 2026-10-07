@@ -2449,10 +2449,11 @@ interface EventPayload {
   };
 
   const gatewayHelp = (id: string): string => (id === 'opencode'
-    ? 'Paste the Zen key from the OpenCode app, or its whole auth.json. Checked ' +
-      'before anything is written, kept owner-only in the keys folder, and never in ' +
-      'the config. The app already installed here is preferred. Only the free tier is ' +
-      'listed — Zen names those with a -free suffix, read live so nothing goes stale.'
+    ? 'Paste the Zen key from the OpenCode app, or its whole auth.json — or a Zen console ' +
+      'key of your own, which additionally unlocks the paid catalogue when it carries ' +
+      'billing. Checked before anything is written, kept owner-only in the keys folder, ' +
+      'and never in the config. The app already installed here is preferred. Only models ' +
+      'your account may actually use are listed, read live so nothing goes stale.'
     : 'Paste the auth.json that `codex login` wrote on the machine that has the ' +
       'subscription. It is checked before anything is written, kept owner-only in the ' +
       'keys folder, and never in the config. On this machine the existing login is ' +

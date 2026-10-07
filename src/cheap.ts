@@ -123,6 +123,7 @@ export const CHEAP_BY_BACKEND: Record<string, string[]> = {
   ],
   "minimax": ["MiniMax-M3", "MiniMax-M2.7"],
   "perplexity": ["sonar-pro", "sonar"],
+  "cohere": ["command-a-03-2025", "command-r-plus-08-2024", "command-r-08-2024"],
 };
 
 export const INJECT: Array<[string, string]> = [
@@ -148,6 +149,7 @@ export const CHEAP_CASCADE: Record<string, string[]> = {
   "moonshot": ["kimi-k2.7-code"],
   "dashscope": ["qwen3.8-max", "qwen-plus"],
   "perplexity": ["sonar"],
+  "cohere": ["command-a-03-2025", "command-r-plus-08-2024"],
 };
 
 export const PIN_REMAP: Record<string, [string, string]> = {

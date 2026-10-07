@@ -2,6 +2,13 @@
 
 ## Forge 3.2
 
+- **Cohere joins the providers.** Command A, Command R+ and Command R through
+  Cohere's OpenAI-compatible endpoint, with a key row, picker entries and a
+  cascade like every other paid provider.
+- **A pasted Zen key unlocks the paid catalogue.** The OpenCode gateway is no
+  longer free-only: with a console key of your own it offers the whole live
+  catalogue, and the probe still hides every model your account may not use.
+  The plan reads “free tier + billed” in that case.
 - **“Always allow” no longer outlives the chat.** A shell/web approval used to
   persist in the saved session, so a click from last week auto-approved new
   commands after a reload. The grant now lives in the running session only;

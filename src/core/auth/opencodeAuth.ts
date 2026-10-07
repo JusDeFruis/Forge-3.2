@@ -171,9 +171,9 @@ export function endpoint_for(model: string): string {
   return ZEN_ENDPOINTS[String(model ?? '').trim()] ?? 'chat/completions';
 }
 
-/** Zen's free tier, read live. Nothing is frozen: the list is whatever the
-    endpoint serves today, filtered by the provider's own `-free` suffix. */
-export async function catalog(): Promise<string[]> {
+/** Zen's catalogue, read live. Nothing is frozen: the list is whatever the
+    endpoint serves today. */
+async function catalog_all(): Promise<string[]> {
   try {
     const res = await fetch(`${ZEN_BASE_URL}/models`, { headers: { accept: 'application/json' } });
     if (!res.ok) return [];
@@ -182,12 +182,32 @@ export async function catalog(): Promise<string[]> {
     const out: string[] = [];
     for (const item of list as unknown[]) {
       const id = String((item as Record<string, any>)?.id ?? '').trim();
-      if (id && is_free_model(id) && !out.includes(id)) out.push(id);
+      if (id && !out.includes(id)) out.push(id);
     }
     return out;
   } catch {
     return [];
   }
+}
+
+/** Zen's free tier: the live catalogue filtered by the provider's own
+    `-free` suffix. */
+export async function catalog(): Promise<string[]> {
+  return (await catalog_all()).filter((id) => is_free_model(id));
+}
+
+/** The whole catalogue, free and paid. Offered only when the reader pasted a
+    Zen key of their own — that key belongs to a console account that may
+    carry billing, so paid models are worth asking about. The probe still
+    decides per model: without credits they refuse and stay hidden. */
+export async function catalog_paid(): Promise<string[]> {
+  return (await catalog_all()).filter((id) => !is_free_model(id));
+}
+
+/** true when the reader pasted a Zen credential of their own, as opposed to
+    relying on the OpenCode app login on this machine. */
+export function has_stored(): boolean {
+  return read_stored().length > 0;
 }
 
 export interface ZenModelState {

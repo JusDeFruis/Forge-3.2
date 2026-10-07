@@ -725,6 +725,9 @@ export const MINIMAX_MODELS: string[] = [
 export const PERPLEXITY_MODELS: string[] = [
   'sonar-pro', 'sonar-reasoning-pro', 'sonar-deep-research', 'sonar',
 ];
+export const COHERE_MODELS: string[] = [
+  'command-a-03-2025', 'command-r-plus-08-2024', 'command-r-08-2024',
+];
 
 export const BACKENDS: Record<string, Backend> = {
   anthropic: new Backend(
@@ -852,7 +855,7 @@ codex: new Backend(
          await, so construction never blocks on the network. */
       models: [],
       cascade: ['space-bunny-free', 'nemotron-3-ultra-free', 'deepseek-v4-flash-free'],
-      blurb: 'the OpenCode app account · the free tier only · ~/.local/share/opencode/auth.json',
+      blurb: 'the OpenCode app account · free tier, plus paid models with a pasted Zen key · ~/.local/share/opencode/auth.json',
     },
   ),
   mistral: new Backend(
@@ -947,14 +950,36 @@ codex: new Backend(
       blurb: 'paid · Sonar with live web search',
     },
   ),
+  cohere: new Backend(
+    'cohere', 'https://api.cohere.com/compatibility/v1', 'command-a-03-2025',
+    {
+      cascade: ['command-a-03-2025', 'command-r-plus-08-2024'],
+      models: COHERE_MODELS,
+      env_keys: ['COHERE_API_KEY'],
+      blurb: 'paid · Cohere Command, OpenAI-compatible',
+    },
+  ),
 };
 
-const OPENCODE_CATALOG_READY: Promise<void> = opencodeAuth.catalog().then((models) => {
+const OPENCODE_CATALOG_READY: Promise<void> = opencodeAuth.catalog().then(async (models) => {
   /* Only the free tier, and only what the endpoint serves today: Zen's free
      models are the ones whose id ends in `-free`, and a frozen copy would keep
      offering what OpenCode has retired. An empty answer keeps the cascade
      fallback rather than emptying the gateway while offline. */
-  if (models.length) BACKENDS['opencode'].models = [...models];
+  const offered = [...models];
+  /* A pasted Zen key belongs to a console account that may carry billing, so
+     the paid catalogue is worth offering too — the probe still hides every
+     model this account may not actually use. */
+  if (opencodeAuth.has_stored()) {
+    try {
+      for (const id of await opencodeAuth.catalog_paid()) {
+        if (!offered.includes(id)) offered.push(id);
+      }
+    } catch {
+      /* paid list is a bonus; the free tier already stands on its own */
+    }
+  }
+  if (offered.length) BACKENDS['opencode'].models = offered;
 }).catch(() => {
   /* catalog() already swallows network failures; this only guards the update */
 });
@@ -992,6 +1017,7 @@ export const _PROVIDER_LABELS: Record<string, string> = {
   dashscope: 'Alibaba DashScope',
   minimax: 'MiniMax',
   perplexity: 'Perplexity',
+  cohere: 'Cohere',
 };
 
 /** Some endpoints accept the request, answer 200, and only then report the
@@ -2135,13 +2161,14 @@ const GATEWAY_READERS: Record<string, () => GatewayReader> = {
   },
   opencode: () => {
     const connected = opencodeAuth.available();
+    const billed = connected && opencodeAuth.has_stored();
     return {
       connected,
       installed: opencodeAuth.installed(),
       /* Zen publishes no tier and no pricing, so there is no plan to read.
-         "free tier" is not a guess about an account: it is what these ids are
-         called and all this gateway offers. */
-      plan: connected ? 'free tier' : null,
+         "free tier" is what the `-free` ids are called; a pasted Zen key may
+         additionally carry billing, and the probe sorts out what answers. */
+      plan: !connected ? null : billed ? 'free tier + billed' : 'free tier',
       mode: 'account',
       until: null,
       not_connected: opencodeAuth.installed()
