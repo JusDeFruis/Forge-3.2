@@ -3486,6 +3486,128 @@ test('a custom prompt is injected only when the switch is on', async () => {
   assert.ok(session_src.includes('limited to 12000 characters'), 'and the length');
 });
 
+test('eco mode squeezes turns without touching code', async () => {
+  const eco = await import('../src/core/eco.js');
+
+  assert.strictEqual(eco.normalize_eco_mode('ULTRA'), 'ultra', 'case-insensitive');
+  assert.strictEqual(eco.normalize_eco_mode('turbo'), 'off', 'unknown falls back to off');
+  assert.strictEqual(eco.normalize_eco_mode(undefined), 'off');
+  assert.strictEqual(eco.estimate_tokens('abcd'), 1, 'chars/4 rule');
+
+  /* off is identity */
+  const raw = "  Salut,  peux-tu  m'aider ?  ";
+  assert.strictEqual(eco.compress_message(raw, 'off').text, raw, 'off changes nothing');
+
+  /* light: greeting and thanks lines gone, whitespace collapsed */
+  const light = eco.compress_message('Salut !\n\nPeux-tu   m\'aider   ?\nMerci !', 'light');
+  assert.ok(!light.text.includes('Salut'), 'greeting stripped');
+  assert.ok(!light.text.includes('Merci'), 'thanks stripped');
+  assert.ok(light.text.includes('aider'), 'the request survives');
+  assert.ok(!/ {2,}/.test(light.text), 'no double spaces left');
+
+  /* standard: filler and hedges */
+  const std = eco.compress_message('Est-ce que tu peux en fait juste me montrer le fichier ?', 'standard');
+  assert.ok(!std.text.includes('Est-ce que'), 'est-ce que gone');
+  assert.ok(!std.text.toLowerCase().includes('en fait'), 'filler gone');
+  assert.ok(!std.text.toLowerCase().includes('juste'), 'juste gone');
+  assert.ok(std.text.includes('?'), 'the question survives');
+  assert.ok(std.text.includes('fichier'), 'the object survives');
+  const dup = eco.compress_message('corrige le le bug', 'standard');
+  assert.ok(!dup.text.includes('le le'), 'doubled words collapse');
+
+  /* ultra telegraphic, French articles */
+  const ultra = eco.compress_message('Peux-tu corriger le bug dans la fonction ?', 'ultra');
+  const tokens = ultra.text.split(/\s+/);
+  assert.ok(!tokens.includes('le') && !tokens.includes('la'), 'articles cut');
+  assert.ok(!ultra.text.includes('Peux-tu'), 'softener cut');
+  assert.ok(ultra.text.includes('corriger') && ultra.text.includes('bug'), 'verbs and nouns survive');
+
+  /* ultra telegraphic, English articles */
+  const en = eco.compress_message('Can you please explain the error in the logs?', 'ultra');
+  const en_tokens = en.text.split(/\s+/);
+  assert.ok(!en_tokens.includes('the'), 'the cut');
+  assert.ok(!en.text.includes('Can you'), 'softener cut');
+  assert.ok(en.text.includes('error') && en.text.includes('logs'), 'meaning survives');
+
+  /* French "il a" is a verb, never an article */
+  const verb = eco.compress_message('il a fini le rapport', 'ultra');
+  assert.ok(verb.text.includes(' a ') || verb.text.startsWith('a ') || /\ba\b/.test(verb.text), 'avoir survives');
+
+  /* code is sacred at every level */
+  const fenced = 'explique```js\nconst just = "actually x";\n```merci';
+  const fenced_out = eco.compress_message(fenced, 'ultra');
+  assert.ok(fenced_out.text.includes('const just = "actually x";'), 'fenced code byte-identical');
+  const inline = eco.compress_message('peux-tu renommer `just a variable` s\'il te plaît ?', 'standard');
+  assert.ok(inline.text.includes('`just a variable`'), 'inline code byte-identical');
+  assert.ok(!inline.text.includes('plaît'), 'but the prose around it is squeezed');
+
+  /* a message that would lose its meaning falls back instead of gutting */
+  const tiny = eco.compress_message('le la les', 'ultra');
+  assert.ok(tiny.text.trim().length > 0, 'never ships empty');
+
+  /* savings grow with the level on a noisy message */
+  const sample = 'Salut ! Est-ce que tu peux en fait juste m\'expliquer le problème avec la fonction, s\'il te plaît ? Merci beaucoup !';
+  const light_pct = eco.compress_message(sample, 'light').saved_pct;
+  const std_pct = eco.compress_message(sample, 'standard').saved_pct;
+  const ultra_pct = eco.compress_message(sample, 'ultra').saved_pct;
+  assert.ok(std_pct >= light_pct && ultra_pct >= std_pct, 'deeper levels save at least as much');
+  assert.ok(ultra_pct > 0, 'the noisy sample actually shrinks');
+
+  /* the shell has an Eco tab wired to the engine, and it is validated */
+  const app = read_source('web', 'app.ts');
+  assert.ok(app.includes('setEcoMode'), 'the level control exists');
+  assert.ok(app.includes('paintEco'), 'the pane is painted from state');
+  assert.ok(app.includes('ecobadge'), 'squeezed turns are badged');
+  const html = read_source('web', 'index.html');
+  assert.ok(html.includes('id="tabEco"'), 'the tab exists');
+  assert.ok(html.includes('id="paneEco"'), 'the pane exists');
+  assert.ok(html.includes('id="setEcoMode"'), 'the control exists');
+  const engine = read_source('src', 'session.ts');
+  assert.ok(engine.includes('eco_mode must be off, light, standard, or ultra'), 'the engine validates the level');
+  assert.ok(engine.includes('compress_message(text, eco_mode)'), 'send() squeezes before the job exists');
+
+  await with_isolated_dir(async () => {
+    await with_session_stubs(
+      {
+        load_source: (session) => {
+          session._source = new vault.LocalVault({});
+          session._vault_mode = 'sealed-defaults';
+        },
+      },
+      async () => {
+        const session = new Forge3Session(() => {});
+        assert.strictEqual(session.update_config({ eco_mode: 'turbo' })['ok'], false, 'unknown level refused');
+        assert.strictEqual(session.update_config({ eco_mode: 'Ultra' })['ok'], true, 'level accepted');
+
+        /* the job carries the squeezed text and the saving is reported */
+        const seen: string[] = [];
+        const proto = Forge3Session.prototype as any;
+        const original = proto._start_job;
+        proto._start_job = function (slot: any, job: any): void {
+          seen.push(job.text);
+        };
+        try {
+          const result = session.send('forge', 'Salut ! Peux-tu en fait juste corriger le bug dans la fonction, s\'il te plaît ? Merci !');
+          assert.strictEqual(result['ok'], true);
+          assert.strictEqual(seen.length, 1, 'the job ran');
+          assert.ok(!seen[0].includes('Salut') && !seen[0].includes('plaît'), 'noise never reaches the model');
+          assert.ok(seen[0].includes('bug') && seen[0].includes('fonction'), 'the request does');
+          const stats = result['eco'];
+          assert.ok(stats && stats['mode'] === 'ultra' && stats['saved_pct'] > 0, 'savings reported to the UI');
+
+          session.update_config({ eco_mode: 'off' });
+          const plain = session.send('forge', 'Salut ! Peux-tu corriger le bug ? Merci !');
+          assert.strictEqual(seen.length, 2);
+          assert.ok(seen[1].includes('Salut'), 'off leaves turns untouched');
+          assert.strictEqual(plain['eco'], null, 'nothing reported when off');
+        } finally {
+          proto._start_job = original;
+        }
+      },
+    );
+  });
+});
+
 test('passing on a question tells the model and blocks a repeat', async () => {
   const { ASK_PASSED, question_signature } = await import('../src/session.js');
   assert.ok(ASK_PASSED.includes('passed'), 'the model is told the reader passed');

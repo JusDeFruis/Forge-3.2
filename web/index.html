@@ -181,6 +181,7 @@
         <button class="tab" id="tabParams" type="button" role="tab" data-pane="paneParams" aria-selected="false" aria-controls="paneParams">Parameters</button>
         <button class="tab" id="tabLook" type="button" role="tab" data-pane="paneLook" aria-selected="false" aria-controls="paneLook">Appearance</button>
         <button class="tab" id="tabPrompts" type="button" role="tab" data-pane="panePrompts" aria-selected="false" aria-controls="panePrompts">Prompts</button>
+        <button class="tab" id="tabEco" type="button" role="tab" data-pane="paneEco" aria-selected="false" aria-controls="paneEco">Eco</button>
         <button class="tab" id="tabCredits" type="button" role="tab" data-pane="paneCredits" aria-selected="false" aria-controls="paneCredits">Credits</button>
       </nav>
 
@@ -469,6 +470,37 @@
             <p class="note">Your text is added after Forge's own prompt and before the turn itself,
             so it reads as the last instruction the model follows. Leave the switch off to keep your
             text here without sending it anywhere.</p>
+          </div>
+        </section>
+
+        <section class="pane" id="paneEco" role="tabpanel" aria-labelledby="tabEco" hidden>
+          <div class="panehead">
+            <div>
+              <h3>Eco mode</h3>
+              <p class="note">Clarify and squeeze your message before it reaches the model, so the
+              turn costs fewer tokens. Your transcript keeps your words — only the model reads less.</p>
+            </div>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">Compression level</h4>
+            <div class="prow">
+              <label for="setEcoMode">Level</label>
+              <select id="setEcoMode" class="ctl"></select>
+            </div>
+            <p class="note" id="ecoHint">Off: every turn goes out exactly as typed.</p>
+          </div>
+
+          <div class="paramgroup">
+            <h4 class="paramtitle">What each level does</h4>
+            <p class="note"><strong>Light</strong> trims the noise: greetings, thanks and extra
+            whitespace disappear. <strong>Standard</strong> also drops filler words and hedges
+            ("just", "actually", "en fait") and fixes doubled words.
+            <strong>Ultra</strong> goes telegraphic on top of that: articles and soft openers
+            ("can you", "je veux que tu") are cut, so only the request survives.</p>
+            <p class="note">Code is sacred at every level: fenced blocks and <code>`inline
+            code`</code> are sent byte-identical, and a message that would lose its meaning
+            falls back instead of going out gutted.</p>
           </div>
         </section>
 

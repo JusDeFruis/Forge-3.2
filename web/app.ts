@@ -179,6 +179,7 @@ interface StateData {
   temp?: number;
   top_p?: number;
   reasoning_effort?: string;
+  eco_mode?: string;
   request_timeout?: number;
   connect_retries?: number;
   insecure?: boolean;
@@ -3034,6 +3035,21 @@ interface EventPayload {
     paintSettingsKeys();
     paintCustomProviders();
     paintParams();
+    paintEco();
+  };
+
+  const ECO_HINTS: Record<string, string> = {
+    off: 'Off: every turn goes out exactly as typed.',
+    light: 'Light: greetings, thanks and extra whitespace are trimmed before sending.',
+    standard: 'Standard: filler words and hedges go too — roughly a fifth fewer tokens.',
+    ultra: 'Ultra: telegraphic. Articles and soft openers are cut — biggest savings, bluntest text.',
+  };
+
+  const paintEco = () => {
+    if (!state) return;
+    const mode = typeof state.eco_mode === 'string' && (state.eco_mode as string) ? state.eco_mode : 'off';
+    fillSelect('setEcoMode', ['off', 'light', 'standard', 'ultra'], mode);
+    ($el('ecoHint') as HTMLElement).textContent = ECO_HINTS[mode] || ECO_HINTS['off'];
   };
 
   const openSettings = () => {
@@ -3093,6 +3109,20 @@ interface EventPayload {
       if (!result || !result.ok) {
         failPending((result && result.error) || 'request rejected');
         playSound('error');
+        return;
+      }
+      /* eco mode squeezed the turn server-side: badge the saving on the
+         reader's own bubble, so the transcript stays honest. */
+      const eco = result.eco;
+      if (eco && typeof eco.saved_pct === 'number' && eco.saved_pct > 0) {
+        const who = youTurn.querySelector('.who');
+        if (who) {
+          const badge = document.createElement('span');
+          badge.className = 'ecobadge';
+          badge.textContent = `eco −${eco.saved_pct}%`;
+          badge.title = `Eco ${eco.mode}: the model read ${eco.after} tokens instead of ${eco.before}. Your text above is untouched.`;
+          who.appendChild(badge);
+        }
       }
     }).catch((error: any) => {
       failPending(String(error));
@@ -3425,6 +3455,7 @@ interface EventPayload {
   bindParam('setProbes', 'anvil_probe_count', 'number');
   bindParam('setVersions', 'anvil_max_versions', 'number');
   bindParam('setThreshold', 'anvil_threshold', 'number');
+  bindParam('setEcoMode', 'eco_mode', 'select');
 
   /* ───────── project dialog: the folder a new project owns ───────── */
   const projectModal = $el('projectModal') as HTMLElement;

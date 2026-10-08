@@ -67,6 +67,10 @@ export const _DEFAULTS: ForgeConfig = {
      subscription that lives elsewhere, so which models it may carry is the
      reader's call, kept here per gateway id. */
   'gateway_models': {},
+  /* eco mode: clarify + compress the reader's message before it is sent.
+     off leaves every turn untouched; light, standard and ultra squeeze
+     greetings, filler, then articles out of the prose — never the code. */
+  'eco_mode': 'off',
   /* the welcome setup runs once and never again */
   'setup_done': false,
 };

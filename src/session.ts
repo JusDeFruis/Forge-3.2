@@ -15,6 +15,7 @@ import * as config from './core/config';
 import * as codexAuth from './core/auth/codexAuth';
 import * as opencodeAuth from './core/auth/opencodeAuth';
 import * as drafter from './core/drafter';
+import { ECO_MODES, compress_message, normalize_eco_mode } from './core/eco';
 import * as hold from './core/hold';
 import * as transport from './core/httpTransport';
 import * as loader from './core/loader';
@@ -672,8 +673,24 @@ export class ForgeSessionBase {
         return { ok: false, error: missing_judge };
       }
     }
-    const job = new Job(
-      room,
+    /* eco mode rewrites the reader's turn before the job exists, so every
+       room downstream — chat, draft, agent — reads the squeezed text. The
+       transcript keeps the original words; only the model sees less. */
+    const eco_mode = normalize_eco_mode(this._cfg['eco_mode']);
+    let eco: Record<string, any> | null = null;
+    if (eco_mode !== 'off') {
+      const squeezed = compress_message(text, eco_mode);
+      if (squeezed.text && squeezed.text !== text) {
+        text = squeezed.text;
+        eco = {
+          mode: eco_mode,
+          before: squeezed.before,
+          after: squeezed.after,
+          saved_pct: squeezed.saved_pct,
+        };
+      }
+    }
+    const job = new Job(      room,
       text,
       {
         ...this._cfg,
@@ -691,10 +708,10 @@ export class ForgeSessionBase {
     if (slot.busy) {
       slot.queue.push(job);
       this._emit('queued', room, { depth: slot.queue.length });
-      return { ok: true, queued: slot.queue.length };
+      return { ok: true, queued: slot.queue.length, eco };
     }
     this._start_job(slot, job);
-    return { ok: true, queued: 0 };
+    return { ok: true, queued: 0, eco };
   }
 
   _start_job(slot: RoomState, job: Job): void {
@@ -1489,6 +1506,7 @@ export class ForgeSessionBase {
       'target',
       'style',
       'record_tests',
+      'eco_mode',
       'insecure',
       'tls_strict',
       'theme',
@@ -1558,6 +1576,13 @@ export class ForgeSessionBase {
         return { ok: false, error: 'reasoning_effort must be off, low, medium, high, or max' };
       }
       clean['reasoning_effort'] = level;
+    }
+    if ('eco_mode' in clean) {
+      const mode = String(clean['eco_mode'] ?? '').trim().toLowerCase();
+      if (!(ECO_MODES as string[]).includes(mode)) {
+        return { ok: false, error: 'eco_mode must be off, light, standard, or ultra' };
+      }
+      clean['eco_mode'] = mode;
     }
     if ('target' in clean) {
       if (typeof clean['target'] !== 'string') {

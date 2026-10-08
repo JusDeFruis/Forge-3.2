@@ -10,6 +10,11 @@
   BigModel and AI/ML API join with key rows, picker entries and cascades —
   every endpoint verified against the provider docs. GitHub Models was left
   out on purpose: retired 2026-07-30.
+- **Eco mode.** A new Settings tab squeezes your message before it reaches the
+  model — Light trims greetings and whitespace, Standard drops filler words,
+  Ultra goes telegraphic — so turns cost fewer tokens. Code blocks are never
+  touched, gutted messages fall back, and squeezed turns are badged with the
+  saving.
 - **Linux and macOS builds join Windows.** One SEA packer builds all four
   binaries natively on GitHub Actions (Windows x64, Linux x64, macOS arm64
   and x64); macOS binaries are ad-hoc signed after injection. The agent
