@@ -6,6 +6,10 @@
   `sealedPrompts.ts` to readable `src/core/prompts/prompts.ts` — edit them
   directly, no encoding step. `reveal(name)` keeps the same contract, and the
   decoded text is byte-identical to what shipped before.
+- **Five more providers.** DeepInfra, Nebius Token Factory, SiliconFlow, Zhipu
+  BigModel and AI/ML API join with key rows, picker entries and cascades —
+  every endpoint verified against the provider docs. GitHub Models was left
+  out on purpose: retired 2026-07-30.
 - **Linux and macOS builds join Windows.** One SEA packer builds all four
   binaries natively on GitHub Actions (Windows x64, Linux x64, macOS arm64
   and x64); macOS binaries are ad-hoc signed after injection. The agent

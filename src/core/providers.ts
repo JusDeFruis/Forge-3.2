@@ -959,6 +959,51 @@ codex: new Backend(
       blurb: 'paid · Cohere Command, OpenAI-compatible',
     },
   ),
+  deepinfra: new Backend(
+    'deepinfra', 'https://api.deepinfra.com/v1/openai', 'deepseek-ai/DeepSeek-V3.2',
+    {
+      cascade: ['deepseek-ai/DeepSeek-V3.2', 'openai/gpt-oss-120b'],
+      models: ['deepseek-ai/DeepSeek-V3.2', 'openai/gpt-oss-120b', 'meta-llama/Llama-3.3-70B-Instruct-Turbo'],
+      env_keys: ['DEEPINFRA_API_TOKEN', 'DEEPINFRA_API_KEY'],
+      blurb: 'paid · 100+ open models · DeepSeek, gpt-oss, Llama',
+    },
+  ),
+  nebius: new Backend(
+    'nebius', 'https://api.tokenfactory.nebius.com/v1/', 'moonshotai/Kimi-K2.7-Code',
+    {
+      cascade: ['moonshotai/Kimi-K2.7-Code', 'deepseek-ai/DeepSeek-V4-Flash-0731'],
+      models: ['moonshotai/Kimi-K2.7-Code', 'deepseek-ai/DeepSeek-V4-Flash-0731', 'deepseek-ai/DeepSeek-V4-Pro-0813', 'Qwen/Qwen3-235B-A22B-Instruct-2507'],
+      env_keys: ['NEBIUS_API_KEY'],
+      blurb: 'paid · Nebius Token Factory · Kimi coder, DeepSeek, Qwen',
+    },
+  ),
+  siliconflow: new Backend(
+    'siliconflow', 'https://api.siliconflow.cn/v1', 'deepseek-ai/DeepSeek-V4-Flash',
+    {
+      cascade: ['deepseek-ai/DeepSeek-V4-Flash', 'deepseek-ai/DeepSeek-V3.2'],
+      models: ['deepseek-ai/DeepSeek-V4-Flash', 'deepseek-ai/DeepSeek-V3.2', 'moonshotai/Kimi-K2.5'],
+      env_keys: ['SILICONFLOW_API_KEY'],
+      blurb: 'paid · SiliconFlow · DeepSeek + Kimi, cheap and fast',
+    },
+  ),
+  zhipu: new Backend(
+    'zhipu', 'https://open.bigmodel.cn/api/paas/v4/', 'glm-5.3',
+    {
+      cascade: ['glm-5.3', 'glm-5.2'],
+      models: ['glm-5.3', 'glm-5.2'],
+      env_keys: ['ZHIPUAI_API_KEY'],
+      blurb: 'paid · Zhipu BigModel direct (China endpoint) · GLM',
+    },
+  ),
+  aimlapi: new Backend(
+    'aimlapi', 'https://api.aimlapi.com/v1', 'openai/gpt-4o-mini',
+    {
+      cascade: ['openai/gpt-4o-mini', 'openai/gpt-4o'],
+      models: ['openai/gpt-4o-mini', 'openai/gpt-4o'],
+      env_keys: ['AIMLAPI_KEY'],
+      blurb: 'paid · AI/ML API · 500+ models through one key',
+    },
+  ),
 };
 
 const OPENCODE_CATALOG_READY: Promise<void> = opencodeAuth.catalog().then(async (models) => {

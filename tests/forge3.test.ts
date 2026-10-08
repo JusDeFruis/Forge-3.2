@@ -216,6 +216,40 @@ test('cohere joins the providers with a key and a picker row', async () => {
   assert.ok(rows.some((c) => c.model.toLowerCase().includes('grok')), 'Grok rows are offered');
 });
 
+test('five more providers join with keys and picker rows', async () => {
+  /* every endpoint below was checked against the provider docs: OpenAI-shaped,
+     HTTPS, Bearer key. GitHub Models was deliberately left out — retired
+     2026-07-30. Hyperbolic and Chutes could not be verified, so they wait. */
+  const wanted: Array<[string, string, string[]]> = [
+    ['deepinfra', 'https://api.deepinfra.com/v1/openai', ['deepseek-ai/DeepSeek-V3.2', 'openai/gpt-oss-120b']],
+    ['nebius', 'https://api.tokenfactory.nebius.com/v1/', ['moonshotai/Kimi-K2.7-Code', 'deepseek-ai/DeepSeek-V4-Flash-0731']],
+    ['siliconflow', 'https://api.siliconflow.cn/v1', ['deepseek-ai/DeepSeek-V4-Flash', 'deepseek-ai/DeepSeek-V3.2']],
+    ['zhipu', 'https://open.bigmodel.cn/api/paas/v4/', ['glm-5.3', 'glm-5.2']],
+    ['aimlapi', 'https://api.aimlapi.com/v1', ['openai/gpt-4o-mini', 'openai/gpt-4o']],
+  ];
+  for (const [id, base, models] of wanted) {
+    assert.ok(P.BACKENDS[id], `${id}: the backend exists`);
+    assert.strictEqual(P.BACKENDS[id].base_url, base, `${id}: the endpoint`);
+    assert.strictEqual(P.BACKENDS[id].kind, 'provider', `${id}: a key provider, not a gateway`);
+    for (const model of P.BACKENDS[id].cascade) {
+      assert.ok((P.BACKENDS[id].models as string[]).includes(model), `${id}: fallback ${model} is offered`);
+    }
+    for (const model of models) {
+      assert.ok(has_slug(cheap_choices({}), id, model), `${id}: ${model} reaches the picker`);
+    }
+  }
+
+  /* a pasted key lands owner-only and the backend reads it back */
+  await with_isolated_dir(async () => {
+    assert.strictEqual(P.BACKENDS['deepinfra'].load_key(), null, 'no key to start with');
+    P.BACKENDS['deepinfra'].save_key('deepinfra-test-key');
+    assert.strictEqual(P.BACKENDS['deepinfra'].load_key(), 'deepinfra-test-key', 'the key round-trips');
+    assert.strictEqual(P.BACKENDS['deepinfra'].has_key(), true);
+    P.BACKENDS['deepinfra'].delete_key();
+    assert.strictEqual(P.BACKENDS['deepinfra'].load_key(), null, 'removal works too');
+  });
+});
+
 test('a pasted Zen key unlocks the paid catalogue, and the probe still decides', async () => {
   const zen = await import('../src/core/auth/opencodeAuth.js');
   const backend = P.BACKENDS['opencode'];
