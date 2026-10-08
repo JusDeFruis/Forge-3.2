@@ -20,11 +20,13 @@ test('frozen shell uses meipass forge3 web', () => {
   assert.ok(fs.statSync(found).isFile());
 });
 
-test('forge prompt assets are encoded at rest', () => {
-  const sealed = read_source('src', 'core', 'prompts', 'sealedPrompts.ts');
+test('forge prompt assets are plain text', () => {
+  const prompts = read_source('src', 'core', 'prompts', 'prompts.ts');
   const strength = read_source('src', 'strength.ts');
-  assert.ok(!sealed.includes('You are Forge'));
-  assert.ok(!sealed.includes('You are FORGE'));
+  assert.ok(prompts.includes('You are Forge 3.0, a production prompt compiler'));
+  assert.ok(prompts.includes('You are FORGE 3.0, a direct senior coding'));
+  assert.ok(prompts.includes('export function reveal'));
+  assert.ok(!prompts.includes('_BLOBS'));
   assert.ok(!strength.includes('FORGE_3_PROFILE = """'));
   assert.ok(FORGE_PROFILE.length > 300);
 });

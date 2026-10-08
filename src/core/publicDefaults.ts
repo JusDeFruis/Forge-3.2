@@ -1,4 +1,4 @@
-import { reveal } from './prompts/sealedPrompts';
+import { reveal } from './prompts/prompts';
 
 export const FORGE3_PERSONA: string = reveal('FORGE3_PERSONA');
 export const FORGE_PROFILE: string = reveal('FORGE_PROFILE');

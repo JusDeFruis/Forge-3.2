@@ -2,6 +2,10 @@
 
 ## Forge 3.2
 
+- **Prompts in plain text.** The Forge prompt assets moved from the obfuscated
+  `sealedPrompts.ts` to readable `src/core/prompts/prompts.ts` — edit them
+  directly, no encoding step. `reveal(name)` keeps the same contract, and the
+  decoded text is byte-identical to what shipped before.
 - **Linux and macOS builds join Windows.** One SEA packer builds all four
   binaries natively on GitHub Actions (Windows x64, Linux x64, macOS arm64
   and x64); macOS binaries are ad-hoc signed after injection. The agent

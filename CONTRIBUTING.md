@@ -28,7 +28,7 @@ Launch with `forge.bat` on Windows or `./forge.sh` on Linux and macOS.
 - `src/core/` — shared provider, vault, history, transport, and drafting primitives
 - `src/core/auth/` — gateway logins (Codex, OpenCode Zen)
 - `src/core/models/` — provider model catalogs
-- `src/core/prompts/` — sealed prompt identities
+- `src/core/prompts/` — prompt identities, in plain text
 - `tests/` — `node:test` suite; it also asserts HTML element ids, the
   bridge-method parity, and security invariants. The folder ships in the
   repository, so a fresh clone runs `npm test` with no extra setup.
@@ -54,7 +54,7 @@ which is deliberate: it is a security list, not a convenience list.
 ## Prompt placement
 
 The Forge prompt (`src/core/persona.ts`, identities in
-`src/core/prompts/sealedPrompts.ts`) must reach **every** model call — draft, review,
+`src/core/prompts/prompts.ts`) must reach **every** model call — draft, review,
 plain chat, and agent alike. `Forge3Session._forge_prompt()` builds it and is
 called by each path. A vault with no persona stored must degrade to the plain
 turn note rather than throw, because `PromptSource.get()` raises on a missing

@@ -650,7 +650,7 @@ export class Forge3Session extends ForgeSessionBase {
     return dir;
   }
 
-  /* the Forge prompt already ships with the app — the sealed identities plus
+  /* the Forge prompt already ships with the app — the built-in identities plus
      the persona the user edits in Settings. The draft pipeline has always
      received it; chat and agent turns never did, so those turns sounded like
      a different assistant than the rest of the app. This puts it back.
