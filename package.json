@@ -1,6 +1,6 @@
 {
   "name": "forge",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "private": true,
   "description": "Forge 3.2 desktop prompt workshop — TypeScript edition",
   "type": "module",

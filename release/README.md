@@ -26,7 +26,7 @@ npm run pack:exe
 
 The Windows build embeds the Node runtime, the web shell and the WebView2
 native library, so it runs on any Windows x64 machine without a Node.js
-install. The packer stamps the `forge.ico` icon and the `3.2.0` version
+install. The packer stamps the `forge.ico` icon and the `3.2.1` version
 resources before injecting the payload. Windows SmartScreen asks for
 "More info" then "Run anyway" on unsigned builds.
 
@@ -35,8 +35,8 @@ resources before injecting the payload. Windows SmartScreen asks for
 Attach the built file to a GitHub Release rather than committing it:
 
 ```bash
-gh release create v3.2 release/Forge-3.2-windows-x64.exe \
-  --title "Forge 3.2" --notes "See CHANGELOG.md"
+gh release create v3.2.1 release/Forge-3.2-windows-x64.exe \
+  --title "Forge 3.2.1" --notes "See CHANGELOG.md"
 ```
 
 Four single-file artifacts, one per platform, all built natively on GitHub

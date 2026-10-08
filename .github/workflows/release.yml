@@ -1,6 +1,6 @@
 name: release
 
-# Cut a release by pushing a tag: `git tag v3.2.0 && git push forge32 v3.2.0`.
+# Cut a release by pushing a tag: `git tag v3.2.1 && git push forge32 v3.2.1`.
 # Each runner builds its binary natively (SEA cannot cross-build), then the
 # publish job attaches all four to one GitHub Release.
 on:

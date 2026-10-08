@@ -54,6 +54,11 @@ platforms run from source with `npm run build && node dist/main.js`.
   list now includes `abliteration-abliterated-model-large-v2`
 - Qwen is offered from four providers: OpenRouter, OrcaRouter, DashScope and
   Venice
+- Five more providers joined: DeepInfra, Nebius, SiliconFlow, Zhipu BigModel
+  and AI/ML API — each with a key row, picker entries and a fallback cascade
+- Eco mode squeezes your message before it reaches the model (Light, Standard,
+  Ultra), so turns cost fewer tokens. Code blocks are never touched, and
+  squeezed turns are badged with the saving
 - The `tests/` folder ships in this repository: `npm test` rebuilds,
   typechecks, and runs the full suite, including the security invariants
 - Bring your own provider: add any OpenAI- or Anthropic-shaped endpoint under
