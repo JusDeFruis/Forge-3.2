@@ -124,11 +124,11 @@ export const CHEAP_BY_BACKEND: Record<string, string[]> = {
   "minimax": ["MiniMax-M3", "MiniMax-M2.7"],
   "perplexity": ["sonar-pro", "sonar"],
   "cohere": ["command-a-03-2025", "command-r-plus-08-2024", "command-r-08-2024"],
-  "deepinfra": ["deepseek-ai/DeepSeek-V3.2", "openai/gpt-oss-120b", "meta-llama/Llama-3.3-70B-Instruct-Turbo"],
-  "nebius": ["moonshotai/Kimi-K2.7-Code", "deepseek-ai/DeepSeek-V4-Flash-0731", "deepseek-ai/DeepSeek-V4-Pro-0813", "Qwen/Qwen3-235B-A22B-Instruct-2507"],
-  "siliconflow": ["deepseek-ai/DeepSeek-V4-Flash", "deepseek-ai/DeepSeek-V3.2", "moonshotai/Kimi-K2.5"],
+  "deepinfra": ["moonshotai/Kimi-K3", "deepseek-ai/DeepSeek-V4-Pro-0813", "deepseek-ai/DeepSeek-V4-Flash-0731", "deepseek-ai/DeepSeek-V4.1-Flash", "zai-org/GLM-5.3"],
+  "nebius": ["moonshotai/Kimi-K3", "moonshotai/Kimi-K2.7-Code", "deepseek-ai/DeepSeek-V4-Pro-0813", "deepseek-ai/DeepSeek-V4-Flash-0731", "Qwen/Qwen3.8-27B"],
+  "siliconflow": ["deepseek-ai/DeepSeek-V4-Flash", "deepseek-ai/DeepSeek-V4-Pro", "moonshotai/Kimi-K2.7-Code", "zai-org/GLM-5.1"],
   "zhipu": ["glm-5.3", "glm-5.2"],
-  "aimlapi": ["openai/gpt-4o-mini", "openai/gpt-4o"],
+  "aimlapi": ["openai/gpt-6-astra", "openai/gpt-6.1-sol", "openai/gpt-5.6-sol", "openai/gpt-5.6-luna"],
 };
 
 export const INJECT: Array<[string, string]> = [
@@ -155,11 +155,11 @@ export const CHEAP_CASCADE: Record<string, string[]> = {
   "dashscope": ["qwen3.8-max", "qwen-plus"],
   "perplexity": ["sonar"],
   "cohere": ["command-a-03-2025", "command-r-plus-08-2024"],
-  "deepinfra": ["deepseek-ai/DeepSeek-V3.2", "openai/gpt-oss-120b"],
-  "nebius": ["moonshotai/Kimi-K2.7-Code", "deepseek-ai/DeepSeek-V4-Flash-0731"],
-  "siliconflow": ["deepseek-ai/DeepSeek-V4-Flash", "deepseek-ai/DeepSeek-V3.2"],
+  "deepinfra": ["moonshotai/Kimi-K3", "deepseek-ai/DeepSeek-V4-Pro-0813"],
+  "nebius": ["moonshotai/Kimi-K3", "moonshotai/Kimi-K2.7-Code"],
+  "siliconflow": ["deepseek-ai/DeepSeek-V4-Flash", "moonshotai/Kimi-K2.7-Code"],
   "zhipu": ["glm-5.3", "glm-5.2"],
-  "aimlapi": ["openai/gpt-4o-mini", "openai/gpt-4o"],
+  "aimlapi": ["openai/gpt-6-astra", "openai/gpt-5.6-sol"],
 };
 
 export const PIN_REMAP: Record<string, [string, string]> = {

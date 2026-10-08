@@ -221,11 +221,11 @@ test('five more providers join with keys and picker rows', async () => {
      HTTPS, Bearer key. GitHub Models was deliberately left out — retired
      2026-07-30. Hyperbolic and Chutes could not be verified, so they wait. */
   const wanted: Array<[string, string, string[]]> = [
-    ['deepinfra', 'https://api.deepinfra.com/v1/openai', ['deepseek-ai/DeepSeek-V3.2', 'openai/gpt-oss-120b']],
-    ['nebius', 'https://api.tokenfactory.nebius.com/v1/', ['moonshotai/Kimi-K2.7-Code', 'deepseek-ai/DeepSeek-V4-Flash-0731']],
-    ['siliconflow', 'https://api.siliconflow.cn/v1', ['deepseek-ai/DeepSeek-V4-Flash', 'deepseek-ai/DeepSeek-V3.2']],
+    ['deepinfra', 'https://api.deepinfra.com/v1/openai', ['moonshotai/Kimi-K3', 'deepseek-ai/DeepSeek-V4-Pro-0813']],
+    ['nebius', 'https://api.tokenfactory.nebius.com/v1/', ['moonshotai/Kimi-K3', 'Qwen/Qwen3.8-27B']],
+    ['siliconflow', 'https://api.siliconflow.cn/v1', ['deepseek-ai/DeepSeek-V4-Flash', 'moonshotai/Kimi-K2.7-Code']],
     ['zhipu', 'https://open.bigmodel.cn/api/paas/v4/', ['glm-5.3', 'glm-5.2']],
-    ['aimlapi', 'https://api.aimlapi.com/v1', ['openai/gpt-4o-mini', 'openai/gpt-4o']],
+    ['aimlapi', 'https://api.aimlapi.com/v1', ['openai/gpt-6-astra', 'openai/gpt-5.6-sol']],
   ];
   for (const [id, base, models] of wanted) {
     assert.ok(P.BACKENDS[id], `${id}: the backend exists`);
@@ -248,6 +248,24 @@ test('five more providers join with keys and picker rows', async () => {
     P.BACKENDS['deepinfra'].delete_key();
     assert.strictEqual(P.BACKENDS['deepinfra'].load_key(), null, 'removal works too');
   });
+
+  /* and none of them ships an id their own docs have retired. Only the five
+     new rows are checked: the wide OpenRouter catalogue legitimately keeps
+     dated OpenAI ids, since a gateway serves whatever a provider still hosts. */
+  const added = wanted.map(([id]) => id);
+  for (const retired of [
+    'openai/gpt-4o', 'openai/gpt-4o-mini', 'openai/gpt-5.5', 'openai/gpt-5.4',
+    'deepseek-ai/DeepSeek-V3', 'deepseek-ai/DeepSeek-R1', 'moonshotai/Kimi-K2.5',
+    'moonshotai/Kimi-K2-Instruct', 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+    'Qwen/Qwen3-235B-A22B-Instruct-2507', 'glm-5.1',
+  ]) {
+    for (const name of added) {
+      assert.ok(
+        !(P.BACKENDS[name].models as string[]).includes(retired),
+        `${name} still ships retired id ${retired}`,
+      );
+    }
+  }
 });
 
 test('a pasted Zen key unlocks the paid catalogue, and the probe still decides', async () => {
@@ -4079,6 +4097,11 @@ test('provider lineups are current for 2026-09-29', () => {
   assert.strictEqual(be['nvidia'].default_model, 'nvidia/nemotron-3-ultra-550b-a55b');
   assert.strictEqual(be['moonshot'].default_model, 'kimi-k3');
   assert.strictEqual(be['zai'].default_model, 'glm-5.3');
+  assert.strictEqual(be['deepinfra'].default_model, 'moonshotai/Kimi-K3');
+  assert.strictEqual(be['nebius'].default_model, 'moonshotai/Kimi-K3');
+  assert.strictEqual(be['siliconflow'].default_model, 'deepseek-ai/DeepSeek-V4-Flash');
+  assert.strictEqual(be['zhipu'].default_model, 'glm-5.3');
+  assert.strictEqual(be['aimlapi'].default_model, 'openai/gpt-6-astra');
   for (const dead of [
     'grok-4.7', 'grok-4', 'grok-4-fast',
     'deepseek-chat', 'deepseek-reasoner',

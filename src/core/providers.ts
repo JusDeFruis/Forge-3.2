@@ -960,30 +960,30 @@ codex: new Backend(
     },
   ),
   deepinfra: new Backend(
-    'deepinfra', 'https://api.deepinfra.com/v1/openai', 'deepseek-ai/DeepSeek-V3.2',
+    'deepinfra', 'https://api.deepinfra.com/v1/openai', 'moonshotai/Kimi-K3',
     {
-      cascade: ['deepseek-ai/DeepSeek-V3.2', 'openai/gpt-oss-120b'],
-      models: ['deepseek-ai/DeepSeek-V3.2', 'openai/gpt-oss-120b', 'meta-llama/Llama-3.3-70B-Instruct-Turbo'],
+      cascade: ['moonshotai/Kimi-K3', 'deepseek-ai/DeepSeek-V4-Pro-0813'],
+      models: ['moonshotai/Kimi-K3', 'deepseek-ai/DeepSeek-V4-Pro-0813', 'deepseek-ai/DeepSeek-V4-Flash-0731', 'deepseek-ai/DeepSeek-V4.1-Flash', 'zai-org/GLM-5.3'],
       env_keys: ['DEEPINFRA_API_TOKEN', 'DEEPINFRA_API_KEY'],
-      blurb: 'paid · 100+ open models · DeepSeek, gpt-oss, Llama',
+      blurb: 'paid · Kimi K3, DeepSeek V4, GLM 5.3 · cheap open weights',
     },
   ),
   nebius: new Backend(
-    'nebius', 'https://api.tokenfactory.nebius.com/v1/', 'moonshotai/Kimi-K2.7-Code',
+    'nebius', 'https://api.tokenfactory.nebius.com/v1/', 'moonshotai/Kimi-K3',
     {
-      cascade: ['moonshotai/Kimi-K2.7-Code', 'deepseek-ai/DeepSeek-V4-Flash-0731'],
-      models: ['moonshotai/Kimi-K2.7-Code', 'deepseek-ai/DeepSeek-V4-Flash-0731', 'deepseek-ai/DeepSeek-V4-Pro-0813', 'Qwen/Qwen3-235B-A22B-Instruct-2507'],
+      cascade: ['moonshotai/Kimi-K3', 'deepseek-ai/DeepSeek-V4-Pro-0813'],
+      models: ['moonshotai/Kimi-K3', 'moonshotai/Kimi-K2.7-Code', 'deepseek-ai/DeepSeek-V4-Pro-0813', 'deepseek-ai/DeepSeek-V4-Flash-0731', 'Qwen/Qwen3.8-27B'],
       env_keys: ['NEBIUS_API_KEY'],
-      blurb: 'paid · Nebius Token Factory · Kimi coder, DeepSeek, Qwen',
+      blurb: 'paid · Nebius Token Factory · Kimi K3, DeepSeek V4 Pro, Qwen 3.8',
     },
   ),
   siliconflow: new Backend(
     'siliconflow', 'https://api.siliconflow.cn/v1', 'deepseek-ai/DeepSeek-V4-Flash',
     {
-      cascade: ['deepseek-ai/DeepSeek-V4-Flash', 'deepseek-ai/DeepSeek-V3.2'],
-      models: ['deepseek-ai/DeepSeek-V4-Flash', 'deepseek-ai/DeepSeek-V3.2', 'moonshotai/Kimi-K2.5'],
+      cascade: ['deepseek-ai/DeepSeek-V4-Flash', 'moonshotai/Kimi-K2.7-Code'],
+      models: ['deepseek-ai/DeepSeek-V4-Flash', 'deepseek-ai/DeepSeek-V4-Pro', 'moonshotai/Kimi-K2.7-Code', 'zai-org/GLM-5.1'],
       env_keys: ['SILICONFLOW_API_KEY'],
-      blurb: 'paid · SiliconFlow · DeepSeek + Kimi, cheap and fast',
+      blurb: 'paid · SiliconFlow · DeepSeek V4, Kimi code, GLM',
     },
   ),
   zhipu: new Backend(
@@ -996,12 +996,12 @@ codex: new Backend(
     },
   ),
   aimlapi: new Backend(
-    'aimlapi', 'https://api.aimlapi.com/v1', 'openai/gpt-4o-mini',
+    'aimlapi', 'https://api.aimlapi.com/v1', 'openai/gpt-6-astra',
     {
-      cascade: ['openai/gpt-4o-mini', 'openai/gpt-4o'],
-      models: ['openai/gpt-4o-mini', 'openai/gpt-4o'],
+      cascade: ['openai/gpt-6-astra', 'openai/gpt-5.6-sol'],
+      models: ['openai/gpt-6-astra', 'openai/gpt-6.1-sol', 'openai/gpt-5.6-sol', 'openai/gpt-5.6-luna'],
       env_keys: ['AIMLAPI_KEY'],
-      blurb: 'paid · AI/ML API · 500+ models through one key',
+      blurb: 'paid · AI/ML API · GPT-6 Astra + 400 more through one key',
     },
   ),
 };
