@@ -250,9 +250,10 @@ async function main() {
   } else {
     console.log('[pack] injecting the blob...');
     const fuse = find_fuse(process.execPath);
+    const macho = target.platform === 'darwin' ? ' --macho-segment-name NODE_SEA' : '';
     execSync(
       `npx --yes ${POSTJECT} "${EXE}" NODE_SEA_BLOB "${path.join(SEA_DIR, 'blob.bin')}" ` +
-        `--sentinel-fuse ${fuse} --overwrite`,
+        `--sentinel-fuse ${fuse}${macho} --overwrite`,
       { cwd: ROOT, stdio: 'inherit', shell: true },
     );
     fs.chmodSync(EXE, 0o755);
